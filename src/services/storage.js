@@ -7,7 +7,11 @@ const STORAGE_KEYS = {
   CART: "zayara_customer_cart_v2",
   PARTIES: "zayara_parties_v2", // Vyapar Customer / Khata Ledger
   EXPENSES: "zayara_expenses_v2", // Vyapar Day Book Expenses
-  STOCK_LOGS: "zayara_stock_logs_v2" // Stock In / Stock Out tracking
+  STOCK_LOGS: "zayara_stock_logs_v2", // Stock In / Stock Out tracking
+  CUSTOMER_USER: "zoyara_current_user",
+  CUSTOMER_USERS: "zoyara_customer_users",
+  ONLINE_ORDERS: "zoyara_online_orders_v2",
+  WISHLIST: "zoyara_wishlist_v2"
 };
 
 // Initial Seed for Parties (Customers with Khata Ledger)
@@ -472,11 +476,371 @@ export function resetAllDataToDefault() {
   localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
   localStorage.setItem(STORAGE_KEYS.STOCK_LOGS, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(STORE_SETTINGS));
+  localStorage.removeItem(STORAGE_KEYS.CUSTOMER_USER);
+  localStorage.removeItem(STORAGE_KEYS.ONLINE_ORDERS);
+  localStorage.removeItem(STORAGE_KEYS.WISHLIST);
   return {
     products: INITIAL_PRODUCTS,
     sales: [],
     parties: INITIAL_PARTIES,
     expenses: INITIAL_EXPENSES,
     settings: STORE_SETTINGS
+  };
+}
+
+// ==========================================
+// CUSTOMER AUTHENTICATION (MOBILE + OTP)
+// ==========================================
+
+const OTP_CACHE = {};
+
+export function sendCustomerOtp(phone) {
+  const cleanPhone = phone.replace(/\D/g, "");
+  if (cleanPhone.length < 10) {
+    return { success: false, error: "Please enter a valid 10-digit mobile number." };
+  }
+  // Generate reliable 4-digit OTP
+  const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+  OTP_CACHE[cleanPhone] = {
+    otp: generatedOtp,
+    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+  };
+
+  // For testing convenience & demo ease, return OTP in response and log to console
+  console.log(`[ZOYARA OTP Service] OTP for +91 ${cleanPhone} is: ${generatedOtp} (or use default 1234)`);
+  return {
+    success: true,
+    phone: cleanPhone,
+    otp: generatedOtp,
+    message: `OTP sent to +91 ${cleanPhone}. (Demo OTP: ${generatedOtp} or 1234)`
+  };
+}
+
+export function verifyCustomerOtp(phone, otpInput, profileData = {}) {
+  const cleanPhone = phone.replace(/\D/g, "");
+  const record = OTP_CACHE[cleanPhone];
+  
+  // Accept the generated OTP OR demo master OTP "1234"
+  const isValidOtp = otpInput === "1234" || (record && record.otp === otpInput && Date.now() <= record.expiresAt);
+
+  if (!isValidOtp) {
+    return { success: false, error: "Invalid or expired OTP. Please use code 1234 or request a new OTP." };
+  }
+
+  // Find or create customer
+  const users = getCustomerUsers();
+  let user = users.find(u => u.phone === cleanPhone);
+
+  if (!user) {
+    user = {
+      id: `usr-${Date.now()}`,
+      phone: cleanPhone,
+      name: profileData.name || "ZOYARA Patron",
+      email: profileData.email || "",
+      address: profileData.address || "",
+      city: profileData.city || "",
+      state: profileData.state || "",
+      pincode: profileData.pincode || "",
+      savedAddresses: profileData.address ? [{
+        id: `addr-${Date.now()}`,
+        name: profileData.name || "Home",
+        phone: cleanPhone,
+        address: profileData.address,
+        city: profileData.city,
+        state: profileData.state,
+        pincode: profileData.pincode,
+        isDefault: true
+      }] : [],
+      createdAt: new Date().toISOString()
+    };
+    saveCustomerUsers([user, ...users]);
+  } else if (profileData.name || profileData.email || profileData.address) {
+    user = { ...user, ...profileData };
+    saveCustomerUsers(users.map(u => u.phone === cleanPhone ? user : u));
+  }
+
+  // Save current active session
+  setCurrentCustomer(user);
+  delete OTP_CACHE[cleanPhone];
+  return { success: true, user };
+}
+
+export function getCurrentCustomer() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOMER_USER);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCurrentCustomer(user) {
+  try {
+    if (user) {
+      localStorage.setItem(STORAGE_KEYS.CUSTOMER_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CUSTOMER_USER);
+    }
+  } catch (e) {
+    console.error("Error setting customer:", e);
+  }
+}
+
+export function logoutCustomer() {
+  localStorage.removeItem(STORAGE_KEYS.CUSTOMER_USER);
+}
+
+export function getCustomerUsers() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOMER_USERS);
+    if (!raw) {
+      const initialUsers = [
+        {
+          id: "usr-01",
+          phone: "9876543210",
+          name: "Pooja Sharma",
+          email: "pooja.sharma@example.com",
+          address: "B-42, South Extn, Part 2",
+          city: "New Delhi",
+          state: "Delhi",
+          pincode: "110049",
+          savedAddresses: [
+            {
+              id: "addr-01",
+              name: "Pooja Sharma",
+              phone: "9876543210",
+              address: "B-42, South Extn, Part 2",
+              city: "New Delhi",
+              state: "Delhi",
+              pincode: "110049",
+              isDefault: true
+            }
+          ],
+          createdAt: new Date(Date.now() - 30 * 86400000).toISOString()
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.CUSTOMER_USERS, JSON.stringify(initialUsers));
+      return initialUsers;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomerUsers(users) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOMER_USERS, JSON.stringify(users));
+  } catch (e) {
+    console.error("Error saving users:", e);
+  }
+}
+
+// ==========================================
+// WISHLIST API
+// ==========================================
+
+export function getWishlist() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.WISHLIST);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function toggleWishlistItem(productId) {
+  const current = getWishlist();
+  const exists = current.includes(productId);
+  const updated = exists ? current.filter(id => id !== productId) : [...current, productId];
+  try {
+    localStorage.setItem(STORAGE_KEYS.WISHLIST, JSON.stringify(updated));
+  } catch (e) {
+    console.error("Error saving wishlist:", e);
+  }
+  return updated;
+}
+
+// ==========================================
+// ONLINE ORDERS & INVOICE GENERATION API
+// ==========================================
+
+const INITIAL_ONLINE_ORDERS = [
+  {
+    orderId: "ZY-ORD-90214",
+    invoiceNumber: "ZY-INV-2026-0842",
+    date: new Date(Date.now() - 2 * 86400000).toISOString(),
+    status: "Delivered",
+    paymentMethod: "UPI (Google Pay)",
+    paymentStatus: "Paid",
+    transactionId: "pay_zy_gpay_94218734",
+    customerName: "Pooja Sharma",
+    customerPhone: "9876543210",
+    customerEmail: "pooja.sharma@example.com",
+    shippingAddress: {
+      fullName: "Pooja Sharma",
+      phone: "9876543210",
+      street: "B-42, South Extn, Part 2",
+      city: "New Delhi",
+      state: "Delhi",
+      pincode: "110049",
+      country: "India"
+    },
+    items: [
+      {
+        id: "zy-jwl-01",
+        title: "Aura Baroque Pearl Drop Hoops",
+        sku: "ZY-JWL-01",
+        hsn: "7117",
+        price: 249,
+        quantity: 1,
+        selectedSize: "Free Size",
+        image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80"
+      },
+      {
+        id: "zy-bra-01",
+        title: "Cloud-Comfort Seamless Wirefree Bralette",
+        sku: "ZY-BRA-01",
+        hsn: "6212",
+        price: 399,
+        quantity: 1,
+        selectedSize: "32B",
+        image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?auto=format&fit=crop&w=800&q=80"
+      }
+    ],
+    subtotal: 648,
+    discountAmount: 65,
+    couponCode: "WELCOME10",
+    shippingFee: 0,
+    taxAmount: 19.44, // 3% included / applied
+    finalTotal: 583,
+    notes: "Complimentary luxury gift box packaging applied."
+  }
+];
+
+export function getOnlineOrders() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.ONLINE_ORDERS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.ONLINE_ORDERS, JSON.stringify(INITIAL_ONLINE_ORDERS));
+      return INITIAL_ONLINE_ORDERS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return INITIAL_ONLINE_ORDERS;
+  }
+}
+
+export function saveOnlineOrders(orders) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ONLINE_ORDERS, JSON.stringify(orders));
+  } catch (e) {
+    console.error("Error saving online orders:", e);
+  }
+}
+
+export function createOnlineOrder(orderData) {
+  const orders = getOnlineOrders();
+  const year = new Date().getFullYear();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const orderId = `ZY-ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+  const invoiceNumber = `ZY-INV-${year}-${randomSuffix}`;
+
+  const newOrder = {
+    orderId,
+    invoiceNumber,
+    date: new Date().toISOString(),
+    status: orderData.paymentMethod === "cod" ? "Order Confirmed" : "Processing",
+    paymentStatus: orderData.paymentMethod === "cod" ? "Pending (Cash on Delivery)" : "Paid",
+    transactionId: orderData.transactionId || `pay_zy_${Date.now()}`,
+    ...orderData
+  };
+
+  const updatedOrders = [newOrder, ...orders];
+  saveOnlineOrders(updatedOrders);
+
+  // 1. Deduct Inventory Stock
+  const products = getProducts();
+  const updatedProducts = products.map(prod => {
+    const orderedItem = orderData.items.find(i => i.id === prod.id);
+    if (orderedItem) {
+      const newStock = Math.max(0, (prod.stock || 0) - orderedItem.quantity);
+      recordStockAdjustment(
+        prod.id,
+        prod.title,
+        "OUT",
+        orderedItem.quantity,
+        `Online Store Order #${orderId}`
+      );
+      return { ...prod, stock: newStock };
+    }
+    return prod;
+  });
+  saveProducts(updatedProducts);
+
+  // 2. Also register into store Sales ledger so POS / Reports screen can track total store revenue
+  const saleRecord = {
+    billNumber: newOrder.invoiceNumber,
+    date: newOrder.date,
+    customerName: newOrder.customerName || "Online Customer",
+    customerPhone: newOrder.customerPhone || "",
+    paymentMethod: orderData.paymentMethod === "cod" ? "cod" : "online",
+    subtotal: newOrder.subtotal,
+    discountAmount: newOrder.discountAmount || 0,
+    taxAmount: newOrder.taxAmount || 0,
+    finalTotal: newOrder.finalTotal,
+    items: newOrder.items.map(it => ({
+      id: it.id,
+      title: it.title,
+      sku: it.sku,
+      price: it.price,
+      quantity: it.quantity,
+      selectedSize: it.selectedSize
+    })),
+    source: "Storefront Online"
+  };
+  const sales = getSales();
+  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([saleRecord, ...sales]));
+
+  return newOrder;
+}
+
+// ==========================================
+// COUPONS & DISCOUNTS API
+// ==========================================
+
+export const PROMO_COUPONS = [
+  { code: "WELCOME10", discountPercent: 10, minOrder: 0, description: "10% off on all items" },
+  { code: "FIRSTORDER", discountPercent: 15, minOrder: 299, description: "15% off on first order above ₹299" },
+  { code: "FESTIVE50", flatDiscount: 50, minOrder: 349, description: "Flat ₹50 off on orders above ₹349" },
+  { code: "FREESHIP", freeShipping: true, minOrder: 0, description: "Free Express Shipping on any order" }
+];
+
+export function validateCoupon(code, subtotal) {
+  if (!code) return { valid: false, error: "Please enter a coupon code." };
+  const cleanCode = code.trim().toUpperCase();
+  const coupon = PROMO_COUPONS.find(c => c.code === cleanCode);
+
+  if (!coupon) {
+    return { valid: false, error: "Invalid coupon code. Try WELCOME10 or FESTIVE50." };
+  }
+
+  if (coupon.minOrder && subtotal < coupon.minOrder) {
+    return { valid: false, error: `Minimum cart value of ₹${coupon.minOrder} required for coupon ${cleanCode}.` };
+  }
+
+  let discount = 0;
+  if (coupon.discountPercent) {
+    discount = Math.round((subtotal * coupon.discountPercent) / 100);
+  } else if (coupon.flatDiscount) {
+    discount = Math.min(coupon.flatDiscount, subtotal);
+  }
+
+  return {
+    valid: true,
+    code: cleanCode,
+    discount,
+    freeShipping: !!coupon.freeShipping,
+    description: coupon.description
   };
 }

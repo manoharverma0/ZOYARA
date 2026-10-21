@@ -342,14 +342,63 @@ export const INITIAL_PRODUCTS = [
 
 export const STORE_SETTINGS = {
   name: "ZOYARA",
-  tagline: "Atelier • Lingerie & Fine Jewellery",
-  address: "Shop 4, Luxury Arcade, Main Market",
+  tagline: "Fashion & Comfort",
+  address: "Shop 4, Luxury Arcade, Main Market, New Delhi - 110049",
   phone: "+91 98765 43210",
   whatsappNumber: "919876543210",
+  email: "care@zoyara.in",
   gstin: "07AAAAZ0000A1Z5", // GSTIN for billing
-  receiptFooter: "Thank you for visiting ZOYARA. For hygiene reasons, intimate wear once opened cannot be exchanged. Jewellery exchange within 7 days with tag.",
-  thermalSize: "58mm", // '58mm' or '80mm'
+  receiptFooter: "Thank you for shopping with ZOYARA. For hygiene standards, intimate wear cannot be returned once opened. Jewellery exchange within 7 days with tag.",
+  thermalSize: "80mm", // '58mm' or '80mm'
   upiId: "zoyara.store@okaxis", // Dynamic UPI QR code ID
-  taxRate: 0, // 0% or customizable GST (e.g. 3% for jewellery, 5% for innerwear)
-  staffPin: "1234" // Staff portal access PIN (changeable in Store Settings)
+  taxRate: 3, // 3% composite GST for fashion jewellery & garments
+  staffPin: "1234", // Staff portal access PIN
+  
+  // Payment Gateway (Razorpay)
+  razorpayKeyId: "rzp_test_1DP5mmOlF5G5ag", // Official Razorpay test key / Configurable in Staff Settings
+  razorpayEnabled: true,
+
+  // Full Technical SEO Settings
+  seoTitle: "ZOYARA — Fashion & Comfort | Anti-Tarnish Jewellery & Everyday Intimates",
+  seoDescription: "ZOYARA — Fashion & Comfort. Curated 18K anti-tarnish waterproof jewellery, zero-wire bras, and seamless intimates crafted for everyday elegance.",
+  seoKeywords: "zoyara, fashion and comfort, anti-tarnish jewellery, 18k jewellery, waterproof jewellery, wirefree bras, seamless underwear, affordable luxury jewellery india",
+  seoRobots: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
+  siteUrl: "https://zoyara.vercel.app",
+  ogImage: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=80",
+  
+  // Google Webmaster & Analytics
+  googleSiteVerification: "google-site-verification=zoyara_live_verification_token_2026",
+  googleAnalyticsId: "G-ZOYARA2026", // Google Analytics 4 ID
+  googleAdsClientId: "ca-pub-zoyara_ad_client", // Google AdSense / Ads Client
+  googleNewsPublication: "ZOYARA Fashion & Lifestyle News",
+  bingSiteVerification: "",
+  pinterestVerification: "",
+  customHeaderHtml: "<!-- Custom tracking scripts, pixels & tags injected here -->",
+  customFooterHtml: "",
+
+  // Offline Stores & Boutique Addresses
+  offlineStores: [
+    {
+      id: "store-delhi",
+      name: "ZOYARA Flagship Boutique",
+      address: "Shop 4, Luxury Arcade, Main Market, South Extension",
+      city: "New Delhi",
+      state: "Delhi",
+      pincode: "110049",
+      phone: "+91 98765 43210",
+      hours: "10:30 AM – 9:00 PM (All 7 Days)",
+      mapsUrl: "https://maps.google.com/?q=South+Extension+New+Delhi"
+    },
+    {
+      id: "store-mumbai",
+      name: "ZOYARA Experience Studio",
+      address: "G-12, Palladium Galleria, High Street Phoenix, Lower Parel",
+      city: "Mumbai",
+      state: "Maharashtra",
+      pincode: "400013",
+      phone: "+91 98112 23344",
+      hours: "11:00 AM – 9:30 PM",
+      mapsUrl: "https://maps.google.com/?q=Lower+Parel+Mumbai"
+    }
+  ]
 };

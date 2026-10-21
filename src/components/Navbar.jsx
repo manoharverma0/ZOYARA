@@ -1,9 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { 
   ShoppingBag, 
   Sparkles, 
   Lock, 
-  ShieldCheck 
+  ShieldCheck, 
+  Search, 
+  Heart, 
+  User, 
+  Menu, 
+  X,
+  Phone,
+  Gift,
+  HelpCircle,
+  Gem
 } from "lucide-react";
 
 export default function Navbar({ 
@@ -11,159 +20,283 @@ export default function Navbar({
   activeCategory, 
   cartCount, 
   openCart,
+  wishlistCount = 0,
+  openWishlist,
+  openSearch,
+  currentUser,
+  openAuth,
+  openAccount,
+  openInfo,
   onRequestStaffPortal
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const categories = [
+    { id: "all", label: "All Pieces" },
+    { id: "Jewellery", label: "Fine Jewellery" },
+    { id: "Bras", label: "Bras & Bralettes" },
+    { id: "Underwear", label: "Girls Underwear" },
+    { id: "under250", label: "Under ₹250" },
+    { id: "antiTarnish", label: "Anti-Tarnish" }
+  ];
+
+  const handleNavClick = (id) => {
+    onSelectCategory(id);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E8E2D8] transition-all no-print">
-      {/* Top announcement bar */}
-      <div className="bg-[#18181B] text-[#FAF8F5] text-[11px] font-medium tracking-[0.15em] uppercase py-1.5 px-4 flex items-center justify-center gap-6">
-        <div className="hidden sm:flex items-center gap-1.5 text-[#A89C8E]">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+    <header className="sticky top-0 z-40 bg-[#F7F2EA]/95 backdrop-blur-md border-b border-[#E6DCCF] transition-all no-print">
+      
+      {/* 1. Slim Editorial Announcement Bar */}
+      <div className="bg-[#18382D] text-[#FFFDFA] text-[11px] font-medium tracking-[0.18em] uppercase py-2 px-4 flex items-center justify-between">
+        <div className="hidden sm:flex items-center gap-2 text-[#E9D9BD]">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#B88D4E]" />
           <span>Anti-Tarnish 18K Polish • Zero-Wire Bras • Pure Cotton Gusset</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-          <span>Complimentary Packaging on All Orders</span>
-          <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+        <div className="mx-auto sm:mx-0 flex items-center gap-2 text-[#FFFDFA]">
+          <Sparkles className="w-3 h-3 text-[#B88D4E]" />
+          <span>Complimentary Gift Box &amp; Ribbon on All Orders</span>
+          <Sparkles className="w-3 h-3 text-[#B88D4E]" />
+        </div>
+
+        <div className="hidden lg:flex items-center gap-4 text-[#E9D9BD] text-[10px]">
+          <button 
+            onClick={() => openInfo("shipping")} 
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            Express Pan-India Delivery
+          </button>
+          <span>•</span>
+          <button 
+            onClick={() => openInfo("contact")} 
+            className="hover:text-white transition-colors cursor-pointer"
+          >
+            WhatsApp Care
+          </button>
         </div>
       </div>
 
+      {/* 2. Main Navigation Bar with Prominent Left-Aligned Logo */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-20 sm:h-22 gap-4">
           
-          {/* Left Brand Identity: ZOYARA & Primary Desktop Navigation */}
-          <div className="flex items-center gap-8 lg:gap-12">
-            {/* Brand Logo - Aligned to Left */}
-            <div 
-              onClick={() => onSelectCategory("all")}
-              className="cursor-pointer group flex flex-col items-start select-none py-1 text-left"
-            >
-              <span className="font-serif text-2xl sm:text-3xl lg:text-4xl tracking-[0.22em] font-medium text-[#1A1A1E] group-hover:text-[#8C6D3F] transition-colors leading-none">
-                ZOYARA
-              </span>
-              <span className="text-[9px] tracking-[0.38em] text-[#8C7E6C] uppercase font-sans mt-1">
-                Atelier &amp; Boutique
-              </span>
+          {/* LEFT: Mobile Menu Button + Prominent Brand Logo (First from user perspective) */}
+          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+            <div className="lg:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 -ml-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-lg transition-colors cursor-pointer"
+                aria-label="Toggle Navigation Menu"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
             </div>
 
-            {/* Desktop Navigation Links: Jewellery, Bras, Underwear, Anti-Tarnish */}
-            <nav className="hidden md:flex items-center space-x-6 text-xs tracking-[0.14em] uppercase font-medium text-[#4A4036]">
-              <button
-                onClick={() => onSelectCategory("all")}
-                className={`hover:text-[#18181B] transition-colors cursor-pointer py-1 ${
-                  activeCategory === "all" ? "text-[#18181B] font-bold border-b-2 border-[#18181B]" : ""
-                }`}
-              >
-                All Pieces
-              </button>
-              <button
-                onClick={() => onSelectCategory("Jewellery")}
-                className={`hover:text-[#18181B] transition-colors cursor-pointer py-1 ${
-                  activeCategory === "Jewellery" ? "text-[#18181B] font-bold border-b-2 border-[#18181B]" : ""
-                }`}
-              >
-                Fine Jewellery
-              </button>
-              <button
-                onClick={() => onSelectCategory("Bras")}
-                className={`hover:text-[#18181B] transition-colors cursor-pointer py-1 ${
-                  activeCategory === "Bras" ? "text-[#18181B] font-bold border-b-2 border-[#18181B]" : ""
-                }`}
-              >
-                Bras &amp; Bralettes
-              </button>
-              <button
-                onClick={() => onSelectCategory("Underwear")}
-                className={`hover:text-[#18181B] transition-colors cursor-pointer py-1 ${
-                  activeCategory === "Underwear" ? "text-[#18181B] font-bold border-b-2 border-[#18181B]" : ""
-                }`}
-              >
-                Girls Underwear
-              </button>
-              <button
-                onClick={() => onSelectCategory("antiTarnish")}
-                className={`hover:text-[#18181B] transition-colors cursor-pointer py-1 ${
-                  activeCategory === "antiTarnish" ? "text-[#18181B] font-bold border-b-2 border-[#18181B]" : ""
-                }`}
-              >
-                Anti-Tarnish
-              </button>
-            </nav>
+            <div 
+              onClick={() => handleNavClick("all")}
+              className="cursor-pointer group flex flex-col items-start select-none"
+            >
+              <span className="font-serif text-3xl sm:text-4xl lg:text-[40px] tracking-[0.16em] font-extrabold text-[#18382D] group-hover:text-[#B88D4E] transition-colors leading-none drop-shadow-2xs">
+                ZOYARA
+              </span>
+              <span className="text-[10px] sm:text-[11px] tracking-[0.34em] text-[#B88D4E] uppercase font-sans mt-1 font-bold whitespace-nowrap">
+                Fashion &amp; Comfort
+              </span>
+            </div>
           </div>
 
-          {/* Right Action Area */}
-          <div className="flex items-center gap-3">
-            {/* Staff Terminal Button (Prominent for cashiers & staff) */}
+          {/* CENTER: Desktop Navigation Categories */}
+          <nav className="hidden lg:flex items-center justify-center space-x-6 xl:space-x-8 text-xs tracking-[0.14em] uppercase font-semibold text-[#746B62] flex-1">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => handleNavClick(cat.id)}
+                className={`hover:text-[#18382D] transition-colors cursor-pointer py-1.5 relative whitespace-nowrap ${
+                  activeCategory === cat.id ? "text-[#18382D] font-bold" : ""
+                }`}
+              >
+                {cat.label}
+                {activeCategory === cat.id && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#18382D]"></span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          {/* RIGHT: Action Icons: Search, Wishlist, Account, Shopping Bag, Staff Portal */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+            
+            {/* Quick Search */}
             <button
-              onClick={onRequestStaffPortal}
-              className="px-3.5 py-2 bg-[#FAF8F5] hover:bg-[#EFE9DF] text-[#18181B] border border-[#DDD2C2] hover:border-[#18181B] rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-              title="Staff Billing &amp; Vyapar Management Portal"
+              onClick={openSearch}
+              className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer"
+              title="Search Collection"
             >
-              <Lock className="w-3.5 h-3.5 text-[#8C6D3F]" />
-              <span className="hidden sm:inline font-mono text-[11px]">STAFF LOGIN</span>
+              <Search className="w-5 h-5 text-[#18382D]" />
             </button>
 
-            {/* Shopping Bag Icon for Customer */}
+            {/* Wishlist */}
             <button
-              onClick={openCart}
-              className="relative px-3.5 py-2 rounded-full bg-[#18181B] hover:bg-[#2B2B30] text-[#FAF8F5] transition-all cursor-pointer border border-[#18181B] flex items-center gap-2 shadow-xs"
-              aria-label="View Shopping Bag"
+              onClick={openWishlist}
+              className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer relative"
+              title="Saved Wishlist"
             >
-              <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
-              <span className="hidden sm:inline text-xs font-semibold tracking-wider font-mono text-white">
-                {cartCount > 0 ? `BAG (${cartCount})` : "BAG"}
-              </span>
-              {cartCount > 0 && (
-                <span className="sm:hidden absolute -top-1 -right-1 bg-[#D4AF37] text-black font-sans font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#FAF8F5] shadow-sm">
-                  {cartCount}
+              <Heart className={`w-5 h-5 ${wishlistCount > 0 ? "fill-[#18382D] text-[#18382D]" : "text-[#18382D]"}`} />
+              {wishlistCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-[#B88D4E] text-white text-[10px] font-bold rounded-full flex items-center justify-center font-mono">
+                  {wishlistCount}
                 </span>
               )}
             </button>
+
+            {/* Customer Account / Login with OTP */}
+            <button
+              onClick={currentUser ? openAccount : openAuth}
+              className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+              title={currentUser ? `Account: ${currentUser.name}` : "Sign In with Mobile OTP"}
+            >
+              <User className="w-5 h-5 text-[#18382D]" />
+              {currentUser && (
+                <span className="hidden xl:inline text-xs font-semibold text-[#18382D] max-w-[80px] truncate">
+                  {currentUser.name?.split(" ")[0]}
+                </span>
+              )}
+            </button>
+
+            {/* Shopping Bag */}
+            <button
+              onClick={openCart}
+              className="p-2 sm:px-3 sm:py-2 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-full transition-all cursor-pointer flex items-center gap-2 shadow-xs"
+              title="View Shopping Bag"
+            >
+              <ShoppingBag className="w-4 h-4 text-[#B88D4E]" />
+              <span className="text-xs font-semibold font-mono hidden sm:inline">
+                {cartCount}
+              </span>
+            </button>
+
+            {/* Staff POS & Terminal entry */}
+            <button
+              onClick={onRequestStaffPortal}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFDFA] hover:bg-[#E7ECE4] text-[#746B62] hover:text-[#18382D] border border-[#E6DCCF] rounded-full text-[11px] font-mono tracking-wider transition-all cursor-pointer ml-1"
+              title="Store Cashier & POS Terminal"
+            >
+              <Lock className="w-3 h-3 text-[#B88D4E]" />
+              <span>POS</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Navigation bar */}
-        <div className="md:hidden flex items-center gap-1.5 py-2.5 border-t border-[#E8E2D8] text-[11px] tracking-wider uppercase font-medium text-[#6B5E4F] overflow-x-auto scrollbar-none px-1">
-          <button 
-            onClick={() => onSelectCategory("all")} 
-            className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${activeCategory === "all" ? "bg-[#18181B] text-white font-bold" : "hover:text-[#18181B]"}`}
-          >
-            All
-          </button>
-          <button 
-            onClick={() => onSelectCategory("Jewellery")} 
-            className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${activeCategory === "Jewellery" ? "bg-[#18181B] text-white font-bold" : "hover:text-[#18181B]"}`}
-          >
-            Jewellery
-          </button>
-          <button 
-            onClick={() => onSelectCategory("Bras")} 
-            className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${activeCategory === "Bras" ? "bg-[#18181B] text-white font-bold" : "hover:text-[#18181B]"}`}
-          >
-            Bras
-          </button>
-          <button 
-            onClick={() => onSelectCategory("Underwear")} 
-            className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${activeCategory === "Underwear" ? "bg-[#18181B] text-white font-bold" : "hover:text-[#18181B]"}`}
-          >
-            Underwear
-          </button>
-          <button 
-            onClick={() => onSelectCategory("antiTarnish")} 
-            className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${activeCategory === "antiTarnish" ? "bg-[#18181B] text-white font-bold" : "hover:text-[#18181B]"}`}
-          >
-            Anti-Tarnish
-          </button>
-          <button 
-            onClick={onRequestStaffPortal} 
-            className="px-3 py-1 rounded-full whitespace-nowrap text-[#8C6D3F] font-bold flex items-center gap-1 hover:bg-[#EFE9DF]"
-          >
-            <Lock className="w-3 h-3" />
-            <span>Staff</span>
-          </button>
+      {/* 3. Sub-Navbar for Desktop Secondary Categories */}
+      <div className="hidden lg:flex border-t border-[#E6DCCF]/60 bg-[#FFFDFA]/60 py-2">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between w-full text-xs text-[#746B62]">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => handleNavClick("under250")}
+              className={`hover:text-[#18382D] transition-colors cursor-pointer flex items-center gap-1 ${
+                activeCategory === "under250" ? "text-[#18382D] font-bold" : ""
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#B88D4E]"></span>
+              <span>Affordable Luxury Under ₹250</span>
+            </button>
+
+            <button
+              onClick={() => handleNavClick("antiTarnish")}
+              className={`hover:text-[#18382D] transition-colors cursor-pointer flex items-center gap-1 ${
+                activeCategory === "antiTarnish" ? "text-[#18382D] font-bold" : ""
+              }`}
+            >
+              <Gem className="w-3 h-3 text-[#18382D]" />
+              <span>Anti-Tarnish 18K Polish</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-6 text-[11px]">
+            <button onClick={() => openInfo("about")} className="hover:text-[#18382D] cursor-pointer">
+              Atelier Philosophy
+            </button>
+            <button onClick={() => openInfo("care")} className="hover:text-[#18382D] cursor-pointer">
+              Jewellery Care
+            </button>
+            <button onClick={() => openInfo("faqs")} className="hover:text-[#18382D] cursor-pointer">
+              Support &amp; FAQs
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* 4. Mobile Drawer Navigation */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-[#FFFDFA] border-b border-[#E6DCCF] shadow-lg animate-fadeIn px-4 py-6 space-y-5">
+          <div className="space-y-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#746B62] block px-2">
+              Collections
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-xs font-medium">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleNavClick(cat.id)}
+                  className={`p-3 text-left rounded-xl transition-all cursor-pointer ${
+                    activeCategory === cat.id
+                      ? "bg-[#18382D] text-white font-semibold"
+                      : "bg-[#F7F2EA] text-[#1B1A18] hover:bg-[#E7ECE4]"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[#E6DCCF] space-y-2 text-xs">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#746B62] block px-2">
+              Customer Services
+            </span>
+            <div className="flex flex-col space-y-1">
+              <button
+                onClick={() => { openInfo("about"); setMobileMenuOpen(false); }}
+                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
+              >
+                About ZOYARA Atelier
+              </button>
+              <button
+                onClick={() => { openInfo("care"); setMobileMenuOpen(false); }}
+                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
+              >
+                Jewellery Care Guide
+              </button>
+              <button
+                onClick={() => { openInfo("shipping"); setMobileMenuOpen(false); }}
+                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
+              >
+                Shipping &amp; Hygiene Return Policy
+              </button>
+              <button
+                onClick={() => { openInfo("contact"); setMobileMenuOpen(false); }}
+                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
+              >
+                WhatsApp Boutique Desk
+              </button>
+            </div>
+          </div>
+
+          {/* Discreet Mobile Staff Terminal */}
+          <div className="pt-3 border-t border-[#E6DCCF]">
+            <button
+              onClick={() => { onRequestStaffPortal(); setMobileMenuOpen(false); }}
+              className="w-full py-2.5 bg-[#F7F2EA] text-[#746B62] hover:text-[#18382D] rounded-xl text-xs font-mono flex items-center justify-center gap-2 cursor-pointer border border-[#E6DCCF]"
+            >
+              <Lock className="w-3.5 h-3.5 text-[#B88D4E]" />
+              <span>Store POS &amp; Staff Counter</span>
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

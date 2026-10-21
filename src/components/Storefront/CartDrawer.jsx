@@ -1,34 +1,49 @@
-import React, { useState } from "react";
-import { X, Trash2, Plus, Minus, MessageCircle, Gift, ArrowRight } from "lucide-react";
+import React from "react";
+import { 
+  X, 
+  Trash2, 
+  Plus, 
+  Minus, 
+  MessageCircle, 
+  Gift, 
+  ArrowRight, 
+  Lock, 
+  ShieldCheck, 
+  Sparkles,
+  ShoppingBag
+} from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
 import { STORE_SETTINGS } from "../../data/initialProducts";
 
-export default function CartDrawer({ isOpen, onClose, cartItems, onUpdateQty, onRemoveItem }) {
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerAddress, setCustomerAddress] = useState("");
-
+export default function CartDrawer({ 
+  isOpen, 
+  onClose, 
+  cartItems, 
+  onUpdateQty, 
+  onRemoveItem, 
+  onClearCart,
+  onProceedCheckout 
+}) {
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const freeShippingThreshold = 499;
+  const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
+  const shippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
-  const handleSendWhatsAppOrder = (e) => {
-    e.preventDefault();
+  const handleSendWhatsAppOrder = () => {
     if (cartItems.length === 0) return;
 
     const itemsSummary = cartItems
-      .map((item, idx) => `${idx + 1}. *${item.title}* (${item.sku}) - Qty: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(item.price * item.quantity)}`)
+      .map((item, idx) => `${idx + 1}. *${item.title}* (${item.selectedSize || "Standard"}) - Qty: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(item.price * item.quantity)}`)
       .join("\n");
 
     const message = encodeURIComponent(
-      `*NEW ONLINE ORDER — ZOYARA ATELIER* ✨\n\n` +
-      `*Customer Details:*\n` +
-      `Name: ${customerName || "Customer"}\n` +
-      `Phone: ${customerPhone || "Not provided"}\n` +
-      `Delivery Address: ${customerAddress || "Local Store Pickup"}\n\n` +
+      `*NEW ONLINE ORDER — ZOYARA ATELIER & BOUTIQUE* ✨\n\n` +
       `*Ordered Items:*\n${itemsSummary}\n\n` +
-      `*Total Order Amount:* ${formatCurrency(subtotal)}\n\n` +
-      `Please share payment QR / bank details and confirmation.`
+      `*Subtotal:* ${formatCurrency(subtotal)}\n` +
+      `*Delivery:* ${subtotal >= freeShippingThreshold ? "FREE EXPRESS" : "Standard ₹49"}\n\n` +
+      `Please confirm stock availability and share payment QR / bank details.`
     );
 
     const whatsappNum = STORE_SETTINGS.whatsappNumber || "919876543210";
@@ -36,95 +51,120 @@ export default function CartDrawer({ isOpen, onClose, cartItems, onUpdateQty, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-[#121214]/50 backdrop-blur-xs transition-opacity animate-fadeIn" onClick={onClose}>
+    <div 
+      className="fixed inset-0 z-50 flex justify-end bg-[#121214]/65 backdrop-blur-xs transition-opacity animate-fadeIn" 
+      onClick={onClose}
+    >
       <div 
-        className="bg-[#FAF8F5] w-full max-w-md h-full shadow-2xl flex flex-col justify-between border-l border-[#DFD5C6] relative"
+        className="bg-[#FFFDFA] w-full max-w-md h-full shadow-2xl flex flex-col justify-between border-l border-[#E6DCCF] relative text-[#1B1A18]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-[#E8E2D8] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="font-serif text-2xl text-[#18181B] font-normal tracking-wide">
+        <div className="p-5 border-b border-[#E6DCCF] flex items-center justify-between bg-[#F7F2EA]">
+          <div className="flex items-center gap-2.5">
+            <h3 className="font-serif text-2xl text-[#18382D] font-normal tracking-wide">
               Your Shopping Bag
             </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#EFE9DF] text-[#7A6D5E] font-medium">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#18382D] text-[#FFFDFA] font-medium font-mono">
               {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
             </span>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#EFE9DF] text-[#7A6D5E] transition-colors cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-[#E6DCCF] text-[#746B62] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Free Shipping Progress Indicator */}
+        <div className="p-3 bg-[#E7ECE4] border-b border-[#C2D4BE] text-xs">
+          <div className="flex items-center justify-between mb-1.5 text-[#18382D]">
+            <span className="font-medium flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#B88D4E]" />
+              {subtotal >= freeShippingThreshold ? (
+                <strong>You've unlocked FREE Express Shipping! 🎉</strong>
+              ) : (
+                <span>Add <strong>{formatCurrency(remainingForFreeShipping)}</strong> more for <strong>FREE Delivery</strong></span>
+              )}
+            </span>
+            <span className="font-mono text-[11px] font-bold">{shippingProgress}%</span>
+          </div>
+          <div className="w-full bg-[#C2D4BE] rounded-full h-1.5 overflow-hidden">
+            <div 
+              className="bg-[#18382D] h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${shippingProgress}%` }}
+            ></div>
+          </div>
+        </div>
+
         {/* Items List */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4 divide-y divide-[#EFE9DF]">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 divide-y divide-[#F7F2EA]">
           {cartItems.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-center text-[#8C7E6C]">
-              <div className="w-12 h-12 rounded-full bg-[#EFE9DF] flex items-center justify-center mb-3">
-                <Gift className="w-6 h-6 text-[#A39686]" />
+            <div className="h-full flex flex-col items-center justify-center text-center text-[#746B62] py-16">
+              <div className="w-16 h-16 rounded-full bg-[#F7F2EA] border border-[#E6DCCF] flex items-center justify-center mb-4">
+                <ShoppingBag className="w-8 h-8 text-[#B88D4E]" />
               </div>
-              <p className="font-serif text-lg text-[#1A1A1E] mb-1">Your bag is currently empty</p>
-              <p className="text-xs text-[#8C7E6C] max-w-xs mb-4">
-                Explore our curated collection of affordable minimalist jewellery and everyday intimates.
+              <p className="font-serif text-xl text-[#18382D] mb-1">Your bag is currently empty</p>
+              <p className="text-xs text-[#746B62] max-w-xs mb-6 leading-relaxed">
+                Explore our curated collection of affordable 18K anti-tarnish jewellery, wirefree bras, and seamless underwear.
               </p>
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 bg-[#18181B] text-[#FAF8F5] rounded-full text-xs font-medium tracking-widest uppercase transition-all hover:bg-[#2B2B30] cursor-pointer"
+                className="px-6 py-3 bg-[#18382D] text-white rounded-full text-xs font-semibold tracking-widest uppercase hover:bg-[#234E3F] transition-all cursor-pointer shadow-sm"
               >
-                Continue Shopping
+                Start Exploring
               </button>
             </div>
           ) : (
             cartItems.map(item => (
-              <div key={item.id} className="pt-4 first:pt-0 flex gap-3.5 items-center">
+              <div key={`${item.id}-${item.selectedSize}`} className="pt-4 first:pt-0 flex gap-3.5 items-start">
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="w-16 h-16 object-cover rounded-lg bg-[#EFE9DF] border border-[#DFD5C6] shrink-0"
+                  className="w-16 h-16 object-cover rounded-lg bg-[#F7F2EA] border border-[#E6DCCF] shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-medium text-[#1A1A1E] truncate mb-0.5">
-                    {item.title}
-                  </h4>
-                  <div className="text-[11px] text-[#8C7E6C] font-mono mb-2">
-                    {item.sku} • {formatCurrency(item.price)}
+                  <div className="flex items-start justify-between gap-1">
+                    <h4 className="text-xs font-medium text-[#1B1A18] truncate">
+                      {item.title}
+                    </h4>
+                    <button
+                      onClick={() => onRemoveItem(item.id, item.selectedSize)}
+                      className="text-[#746B62] hover:text-red-600 transition-colors cursor-pointer p-0.5"
+                      title="Remove item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center border border-[#DFD5C6] rounded-md bg-white">
+
+                  <div className="text-[11px] text-[#746B62] font-mono mb-2">
+                    {item.selectedSize ? `Size: ${item.selectedSize} • ` : ""}{formatCurrency(item.price)}
+                  </div>
+
+                  {/* Quantity Counter */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center border border-[#E6DCCF] rounded-md bg-white">
                       <button
                         onClick={() => onUpdateQty(item.id, item.selectedSize, item.quantity - 1)}
-                        className="px-2 py-0.5 hover:bg-[#FAF8F5] text-[#6E6152] transition-colors cursor-pointer"
+                        className="px-2 py-0.5 text-xs text-[#746B62] hover:bg-[#F7F2EA] cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="px-2 text-xs font-medium text-[#1A1A1E]">
+                      <span className="px-2 text-xs font-mono font-medium text-[#18382D]">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => onUpdateQty(item.id, item.selectedSize, item.quantity + 1)}
-                        className="px-2 py-0.5 hover:bg-[#FAF8F5] text-[#6E6152] transition-colors cursor-pointer"
+                        className="px-2 py-0.5 text-xs text-[#746B62] hover:bg-[#F7F2EA] cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
 
-                    <button
-                      onClick={() => onRemoveItem(item.id, item.selectedSize)}
-                      className="text-[#A39686] hover:text-red-600 transition-colors p-1 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="text-right">
-                  <div className="text-xs font-semibold text-[#18181B]">
-                    {formatCurrency(item.price * item.quantity)}
+                    <span className="font-mono font-semibold text-xs text-[#18382D]">
+                      {formatCurrency(item.price * item.quantity)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -132,67 +172,54 @@ export default function CartDrawer({ isOpen, onClose, cartItems, onUpdateQty, on
           )}
         </div>
 
-        {/* Order Form & Footer Actions */}
+        {/* Footer & Checkout Call-to-Actions */}
         {cartItems.length > 0 && (
-          <div className="p-5 bg-[#F4EFE6] border-t border-[#E8E2D8] space-y-4">
+          <div className="p-5 bg-[#F7F2EA] border-t border-[#E6DCCF] space-y-3">
             
             {/* Complimentary Packaging Note */}
-            <div className="flex items-center gap-2 text-[11px] text-[#6E6152] bg-[#FAF8F5] p-2.5 rounded-lg border border-[#DFD5C6]">
-              <Gift className="w-4 h-4 text-[#C5A880] shrink-0" />
-              <span>Includes complimentary aesthetic unboxing card & protective pouch.</span>
+            <div className="flex items-center gap-2 text-[11px] text-[#18382D]">
+              <Gift className="w-4 h-4 text-[#B88D4E] shrink-0" />
+              <span>Complimentary luxury gift box &amp; velvet pouch included</span>
             </div>
 
-            {/* Quick Customer Inputs for WhatsApp Dispatch */}
-            <div className="space-y-2">
-              <input
-                type="text"
-                placeholder="Your Name (Optional)"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-white border border-[#DFD5C6] rounded-lg focus:outline-none focus:border-[#18181B]"
-              />
-              <div className="flex gap-2">
-                <input
-                  type="tel"
-                  placeholder="Mobile / WhatsApp No."
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-1/2 text-xs px-3 py-2 bg-white border border-[#DFD5C6] rounded-lg focus:outline-none focus:border-[#18181B]"
-                />
-                <input
-                  type="text"
-                  placeholder="City / Pincode"
-                  value={customerAddress}
-                  onChange={(e) => setCustomerAddress(e.target.value)}
-                  className="w-1/2 text-xs px-3 py-2 bg-white border border-[#DFD5C6] rounded-lg focus:outline-none focus:border-[#18181B]"
-                />
+            {/* Calculations */}
+            <div className="space-y-1 text-xs text-[#746B62] pt-1">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span className="font-mono text-[#1B1A18]">{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping:</span>
+                <span className="font-mono text-[#1B1A18]">
+                  {subtotal >= freeShippingThreshold ? <strong className="text-emerald-800">FREE</strong> : "₹49 (Standard)"}
+                </span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-[#E6DCCF] text-base font-bold text-[#18382D]">
+                <span>Total Amount:</span>
+                <span className="font-mono">{formatCurrency(subtotal)}</span>
               </div>
             </div>
 
-            {/* Subtotal & Delivery */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex justify-between text-xs text-[#6E6152]">
-                <span>Items Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-xs text-[#6E6152]">
-                <span>Boutique Packaging</span>
-                <span className="text-emerald-700 font-medium">Complimentary</span>
-              </div>
-              <div className="flex justify-between text-sm font-semibold text-[#18181B] pt-2 border-t border-[#DFD5C6]">
-                <span>Estimated Total</span>
-                <span className="text-base">{formatCurrency(subtotal)}</span>
-              </div>
-            </div>
+            {/* PRIMARY: Online Checkout & Payment Gateway */}
+            <button
+              onClick={() => {
+                onClose();
+                onProceedCheckout();
+              }}
+              className="w-full py-3.5 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Lock className="w-3.5 h-3.5 text-[#B88D4E]" />
+              <span>Proceed to Checkout</span>
+              <ArrowRight className="w-4 h-4 text-[#B88D4E]" />
+            </button>
 
-            {/* WhatsApp Checkout Button */}
+            {/* SECONDARY: Quick WhatsApp Order */}
             <button
               onClick={handleSendWhatsAppOrder}
-              className="w-full py-3 px-4 bg-[#18181B] hover:bg-[#2B2B30] text-[#FAF8F5] rounded-xl font-medium text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              className="w-full py-2.5 bg-white hover:bg-[#FFFDFA] text-[#18382D] border border-[#E6DCCF] rounded-xl text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
             >
-              <MessageCircle className="w-4 h-4 text-[#25D366]" />
-              <span>Confirm Order on WhatsApp</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+              <span>Or Order via WhatsApp</span>
             </button>
           </div>
         )}
