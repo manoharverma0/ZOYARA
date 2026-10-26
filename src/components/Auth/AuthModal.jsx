@@ -409,9 +409,17 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
             {/* Verification Code Box (Auto-generated for session) */}
             {generatedPhoneCode && (
-              <div className="p-2.5 bg-[#F7F2EA] border border-[#DFD5C6] rounded-xl text-center">
-                <span className="text-[10px] text-[#746B62] block uppercase tracking-wider mb-0.5 font-medium">Your 4-Digit Security Code:</span>
-                <span className="font-mono text-base font-bold text-[#18382D] tracking-[0.25em]">{generatedPhoneCode}</span>
+              <div 
+                onClick={() => setOtp(generatedPhoneCode.split(""))}
+                className="p-2.5 bg-[#F7F2EA] hover:bg-[#EFE7D8] border border-[#DFD5C6] rounded-xl text-center cursor-pointer transition-colors group"
+                title="Click to fill into boxes"
+              >
+                <span className="text-[10px] text-[#746B62] block uppercase tracking-wider mb-0.5 font-medium">
+                  Your 4-Digit Security Code (Click to fill):
+                </span>
+                <span className="font-mono text-base font-bold text-[#18382D] tracking-[0.25em] group-hover:scale-105 inline-block transition-transform">
+                  {generatedPhoneCode}
+                </span>
               </div>
             )}
 
