@@ -78,7 +78,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       if (res.success) {
         setGeneratedPhoneCode(res.otp || "");
         setWhatsappLink(res.whatsappUrl || "");
-        setNotice(`Security Code: ${res.otp} (Valid for 5 mins). Click WhatsApp below or enter code directly.`);
+        setNotice("Verification code sent! Click WhatsApp below to receive it, or enter the code.");
         setStep("otp");
         setCountdown(60);
         setOtp(["", "", "", ""]);
@@ -407,21 +407,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
               ))}
             </div>
 
-            {/* Verification Code Box (Auto-generated for session) */}
-            {generatedPhoneCode && (
-              <div 
-                onClick={() => setOtp(generatedPhoneCode.split(""))}
-                className="p-2.5 bg-[#F7F2EA] hover:bg-[#EFE7D8] border border-[#DFD5C6] rounded-xl text-center cursor-pointer transition-colors group"
-                title="Click to fill into boxes"
-              >
-                <span className="text-[10px] text-[#746B62] block uppercase tracking-wider mb-0.5 font-medium">
-                  Your 4-Digit Security Code (Click to fill):
-                </span>
-                <span className="font-mono text-base font-bold text-[#18382D] tracking-[0.25em] group-hover:scale-105 inline-block transition-transform">
-                  {generatedPhoneCode}
-                </span>
-              </div>
-            )}
+            {/* WhatsApp delivery notice (no on-screen code reveal) */}
+            <div className="p-3 bg-[#F7F2EA] border border-[#DFD5C6] rounded-xl text-center">
+              <span className="text-xs text-[#746B62] block">
+                Verification code generated. Click below to receive or confirm via WhatsApp:
+              </span>
+            </div>
 
             {/* Instant Free WhatsApp Verification Button */}
             {whatsappLink && (
