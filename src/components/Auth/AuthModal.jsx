@@ -13,9 +13,8 @@ import {
   Smartphone
 } from "lucide-react";
 import { 
-  sendCustomerOtp, 
-  verifyCustomerOtp, 
-  updateCustomerProfile
+  loginCustomerWithPhone,
+  getStoreSettings 
 } from "../../services/storage";
 import { 
   sendSupabaseEmailOtp, 
@@ -24,14 +23,14 @@ import {
 } from "../../services/supabase";
 
 export default function AuthModal({ isOpen, onClose, onSuccess }) {
-  const [authMode, setAuthMode] = useState("email"); // 'email' (primary free Supabase OTP) | 'whatsapp'
-  const [step, setStep] = useState("input"); // 'input' | 'otp' | 'profile'
-  
-  // Phone / WhatsApp Auth State
+  // 'email' (primary free Supabase OTP) | 'phone' (direct mobile patron login)
+  const [authMode, setAuthMode] = useState("email"); 
+  const [step, setStep] = useState("input"); // 'input' | 'otp'
+
+  // Phone Sign-In State
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [generatedPhoneCode, setGeneratedPhoneCode] = useState("");
-  const [whatsappLink, setWhatsappLink] = useState("");
+  const [phoneName, setPhoneName] = useState("");
+  const [phoneCity, setPhoneCity] = useState("");
 
   // Email OTP (Supabase) State
   const [emailInput, setEmailInput] = useState("");
@@ -43,12 +42,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Profile fields for new users
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [city, setCity] = useState("");
-
   const { isConfigured: isSupabaseActive } = getSupabaseCredentials();
+  const storeSettings = getStoreSettings();
+  const storeWhatsApp = (storeSettings?.whatsappNumber || "919876543210").replace(/\D/g, "");
 
   useEffect(() => {
     let timer;
@@ -60,8 +56,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
-  // Send WhatsApp / Mobile OTP (100% Free - No paid SMS gateway required)
-  const handleSendMobileOtp = (e) => {
+  // Direct Mobile Patron Sign-In (Zero SMS cost, instant, no fake OTP)
+  const handlePhoneLogin = (e) => {
     e.preventDefault();
     setError("");
     setNotice("");
@@ -70,22 +66,22 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       setError("Please enter a valid 10-digit Indian mobile number.");
       return;
     }
+    if (!phoneName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
 
     setLoading(true);
     setTimeout(() => {
-      const res = sendCustomerOtp(cleanPhone);
+      const res = loginCustomerWithPhone(cleanPhone, phoneName, "", phoneCity);
       setLoading(false);
       if (res.success) {
-        setGeneratedPhoneCode(res.otp || "");
-        setWhatsappLink(res.whatsappUrl || "");
-        setNotice("Verification code sent! Click WhatsApp below to receive it, or enter the code.");
-        setStep("otp");
-        setCountdown(60);
-        setOtp(["", "", "", ""]);
+        onSuccess(res.user);
+        onClose();
       } else {
-        setError(res.error || "Failed to generate verification code.");
+        setError(res.error || "Could not sign in with this mobile number.");
       }
-    }, 350);
+    }, 300);
   };
 
   // Send Free Supabase Email OTP
@@ -109,33 +105,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
     } else {
       setError(res.error || "Could not send email OTP. Ensure Supabase is configured.");
     }
-  };
-
-  // Verify Phone OTP
-  const handleVerifyPhoneOtp = (e) => {
-    e.preventDefault();
-    setError("");
-    const fullOtp = otp.join("").trim();
-    if (fullOtp.length !== 4) {
-      setError("Please enter the complete 4-digit code.");
-      return;
-    }
-
-    setLoading(true);
-    setTimeout(() => {
-      const res = verifyCustomerOtp(phone, fullOtp, { name, email, city });
-      setLoading(false);
-      if (res.success) {
-        if (!res.user.name || res.user.name === "ZOYARA Patron") {
-          setStep("profile");
-        } else {
-          onSuccess(res.user);
-          onClose();
-        }
-      } else {
-        setError(res.error || "Invalid verification code.");
-      }
-    }, 400);
   };
 
   // Verify Email OTP via Supabase
@@ -162,46 +131,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       onClose();
     } else {
       setError(res.error || "Invalid or expired email code.");
-    }
-  };
-
-  // Profile submission for new customers
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError("Please enter your name.");
-      return;
-    }
-    const cleanPhone = phone.replace(/\D/g, "");
-    const res = updateCustomerProfile(cleanPhone, { 
-      name: name.trim(), 
-      email: email.trim(), 
-      city: city.trim() 
-    });
-    if (res.success) {
-      onSuccess(res.user);
-      onClose();
-    }
-  };
-
-  const handleOtpChange = (index, value) => {
-    const val = value.slice(-1);
-    if (!/^\d*$/.test(val)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = val;
-    setOtp(newOtp);
-
-    if (val && index < 3) {
-      const nextInput = document.getElementById(`live-otp-box-${index + 1}`);
-      if (nextInput) nextInput.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`live-otp-box-${index - 1}`);
-      if (prevInput) prevInput.focus();
     }
   };
 
@@ -241,19 +170,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           <div className="grid grid-cols-2 gap-2 mb-5 p-1 bg-[#F7F2EA] rounded-xl text-xs font-semibold">
             <button
               type="button"
-              onClick={() => { setAuthMode("whatsapp"); setError(""); }}
-              className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                authMode === "whatsapp" 
-                  ? "bg-white text-[#18382D] shadow-xs" 
-                  : "text-[#746B62] hover:text-[#18382D]"
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5 text-[#25D366]" />
-              <span>WhatsApp / Mobile</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setAuthMode("email"); setError(""); }}
+              onClick={() => { setAuthMode("email"); setError(""); setNotice(""); }}
               className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 authMode === "email" 
                   ? "bg-white text-[#18382D] shadow-xs" 
@@ -262,6 +179,18 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
             >
               <Mail className="w-3.5 h-3.5 text-[#18382D]" />
               <span>Free Email OTP</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode("phone"); setError(""); setNotice(""); }}
+              className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                authMode === "phone" 
+                  ? "bg-white text-[#18382D] shadow-xs" 
+                  : "text-[#746B62] hover:text-[#18382D]"
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5 text-[#25D366]" />
+              <span>Mobile Sign-in</span>
             </button>
           </div>
         )}
@@ -280,54 +209,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         )}
 
         {/* ========================================================
-            STEP 1: PHONE / WHATSAPP INPUT
-        ======================================================== */}
-        {step === "input" && authMode === "whatsapp" && (
-          <form onSubmit={handleSendMobileOtp} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1.5">
-                Mobile Number
-              </label>
-              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden focus-within:border-[#18382D] focus-within:ring-1 focus-within:ring-[#18382D] transition-all">
-                <div className="px-3 py-2.5 bg-[#F7F2EA] text-xs font-semibold text-[#18382D] border-r border-[#E6DCCF] flex items-center gap-1">
-                  <span>🇮🇳</span>
-                  <span>+91</span>
-                </div>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                  placeholder="98765 43210"
-                  autoFocus
-                  className="flex-1 px-3 py-2.5 text-sm font-mono tracking-wider bg-transparent focus:outline-none"
-                />
-              </div>
-              <p className="text-[11px] text-[#746B62] mt-1.5 flex items-center gap-1">
-                <span>Free instant verification via WhatsApp or live security code.</span>
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || phone.length < 10}
-              className="w-full py-3 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-            >
-              {loading ? "Generating Code..." : "Get Verification Code"}
-              <ArrowRight className="w-4 h-4 text-[#B88D4E]" />
-            </button>
-
-            <div className="pt-2 border-t border-[#E6DCCF] text-center">
-              <div className="text-[11px] text-[#746B62] flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                <span>100% Free • Zero Spam • No Password Required</span>
-              </div>
-            </div>
-          </form>
-        )}
-
-        {/* ========================================================
-            STEP 1 (ALT): FREE EMAIL OTP VIA SUPABASE
+            TAB 1: FREE EMAIL OTP VIA SUPABASE AUTH
         ======================================================== */}
         {step === "input" && authMode === "email" && (
           <form onSubmit={handleSendEmailOtp} className="space-y-4">
@@ -351,8 +233,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
               </div>
               <p className="text-[11px] text-[#746B62] mt-1.5">
                 {isSupabaseActive 
-                  ? "We'll send a real 6-digit verification code directly to your email." 
-                  : "Requires Supabase cloud config in Admin Settings for live delivery."}
+                  ? "Supabase will deliver a secure 6-digit code directly to your email inbox." 
+                  : "Live Supabase cloud authentication."}
               </p>
             </div>
 
@@ -364,107 +246,36 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
               {loading ? "Sending Code..." : "Send Free Email OTP"}
               <ArrowRight className="w-4 h-4 text-[#B88D4E]" />
             </button>
+
+            <div className="pt-2 border-t border-[#E6DCCF] text-center">
+              <div className="text-[11px] text-[#746B62] flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span>100% Free Live Cloud Verification • Powered by Supabase</span>
+              </div>
+            </div>
           </form>
         )}
 
         {/* ========================================================
-            STEP 2: OTP VERIFICATION (NO DEMO BYPASS)
+            TAB 1 (STEP 2): VERIFY 6-DIGIT EMAIL OTP
         ======================================================== */}
-        {step === "otp" && authMode === "whatsapp" && (
-          <form onSubmit={handleVerifyPhoneOtp} className="space-y-4">
-            <div className="text-center">
-              <p className="text-xs text-[#746B62]">
-                Enter the 4-digit code generated for:
-              </p>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                <span className="font-mono font-semibold text-sm text-[#18382D]">
-                  +91 {phone}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { setStep("input"); setError(""); }}
-                  className="text-xs text-[#B88D4E] hover:underline cursor-pointer"
-                >
-                  Change
-                </button>
-              </div>
-            </div>
-
-            {/* OTP 4 Boxes */}
-            <div className="flex items-center justify-center gap-3">
-              {[0, 1, 2, 3].map((idx) => (
-                <input
-                  key={idx}
-                  id={`live-otp-box-${idx}`}
-                  type="text"
-                  maxLength={1}
-                  value={otp[idx]}
-                  onChange={(e) => handleOtpChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                  autoFocus={idx === 0}
-                  className="w-12 h-14 text-center text-xl font-mono font-bold bg-white border-2 border-[#E6DCCF] rounded-xl focus:border-[#18382D] focus:outline-none transition-all shadow-2xs"
-                />
-              ))}
-            </div>
-
-            {/* WhatsApp delivery notice (no on-screen code reveal) */}
-            <div className="p-3 bg-[#F7F2EA] border border-[#DFD5C6] rounded-xl text-center">
-              <span className="text-xs text-[#746B62] block">
-                Verification code generated. Click below to receive or confirm via WhatsApp:
-              </span>
-            </div>
-
-            {/* Instant Free WhatsApp Verification Button */}
-            {whatsappLink && (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 px-3 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/40 text-[#128C7E] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                <span>Receive / Confirm on WhatsApp (Free)</span>
-              </a>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || otp.join("").length !== 4}
-              className="w-full py-3 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-            >
-              {loading ? "Verifying..." : "Verify & Continue"}
-              <CheckCircle2 className="w-4 h-4 text-[#B88D4E]" />
-            </button>
-
-            {/* Resend Timer */}
-            <div className="text-center pt-2">
-              {countdown > 0 ? (
-                <span className="text-xs text-[#746B62] font-mono">
-                  Resend code in {countdown}s
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSendMobileOtp}
-                  className="text-xs text-[#18382D] font-semibold hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Request New Code</span>
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-
-        {/* STEP 2 (ALT): EMAIL OTP VERIFICATION */}
         {step === "otp" && authMode === "email" && (
           <form onSubmit={handleVerifyEmailOtp} className="space-y-4">
             <div className="text-center">
               <p className="text-xs text-[#746B62]">
-                Enter the code sent to your email:
+                Enter the 6-digit verification code sent to:
               </p>
-              <div className="font-mono font-semibold text-xs text-[#18382D] mt-1">
-                {emailInput}
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <span className="font-mono font-semibold text-xs text-[#18382D]">
+                  {emailInput}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setStep("input"); setError(""); setNotice(""); }}
+                  className="text-xs text-[#B88D4E] hover:underline cursor-pointer"
+                >
+                  Change
+                </button>
               </div>
             </div>
 
@@ -473,26 +284,26 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                 type="text"
                 maxLength={8}
                 value={emailOtp}
-                onChange={(e) => setEmailOtp(e.target.value)}
-                placeholder="Enter 6-digit OTP"
+                onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ""))}
+                placeholder="6-Digit OTP"
                 autoFocus
-                className="w-full text-center text-xl tracking-[0.3em] font-mono font-bold p-3 bg-white border-2 border-[#E6DCCF] rounded-xl focus:border-[#18382D] focus:outline-none"
+                className="w-full text-center text-2xl tracking-[0.35em] font-mono font-bold p-3 bg-white border-2 border-[#E6DCCF] rounded-xl focus:border-[#18382D] focus:outline-none"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading || !emailOtp.trim()}
+              disabled={loading || emailOtp.length < 6}
               className="w-full py-3 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
-              {loading ? "Verifying..." : "Confirm Email Code"}
+              {loading ? "Verifying..." : "Verify & Sign In"}
               <CheckCircle2 className="w-4 h-4 text-[#B88D4E]" />
             </button>
 
             <div className="text-center pt-2">
               {countdown > 0 ? (
                 <span className="text-xs text-[#746B62] font-mono">
-                  Resend in {countdown}s
+                  Resend code in {countdown}s
                 </span>
               ) : (
                 <button
@@ -509,76 +320,99 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         )}
 
         {/* ========================================================
-            STEP 3: PROFILE COMPLETION FOR FIRST-TIME USERS
+            TAB 2: MOBILE NUMBER PATRON SIGN-IN (DIRECT & CLEAN)
         ======================================================== */}
-        {step === "profile" && (
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="p-3 bg-[#F7F2EA] rounded-xl text-center">
-              <p className="text-xs text-[#18382D] font-medium">
-                Welcome to ZOYARA! Please confirm your name to complete your patron profile.
-              </p>
-            </div>
-
+        {step === "input" && authMode === "phone" && (
+          <form onSubmit={handlePhoneLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1">
-                Your Full Name *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1.5">
+                Mobile Number
               </label>
-              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden px-3 py-2.5">
-                <User className="w-4 h-4 text-[#746B62] mr-2" />
+              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden focus-within:border-[#18382D] focus-within:ring-1 focus-within:ring-[#18382D] transition-all">
+                <div className="px-3 py-2.5 bg-[#F7F2EA] text-xs font-semibold text-[#18382D] border-r border-[#E6DCCF] flex items-center gap-1">
+                  <span>🇮🇳</span>
+                  <span>+91</span>
+                </div>
                 <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Radhika Kapoor"
+                  type="tel"
+                  maxLength={10}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="98765 43210"
                   autoFocus
-                  className="flex-1 text-sm bg-transparent focus:outline-none"
+                  required
+                  className="flex-1 px-3 py-2.5 text-sm font-mono tracking-wider bg-transparent focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1">
-                Email for Invoices (Optional)
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1.5">
+                Full Name
               </label>
-              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden px-3 py-2.5">
-                <Mail className="w-4 h-4 text-[#746B62] mr-2" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="radhika@example.com"
-                  className="flex-1 text-sm bg-transparent focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1">
-                City / Region
-              </label>
-              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden px-3 py-2.5">
-                <MapPin className="w-4 h-4 text-[#746B62] mr-2" />
+              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden focus-within:border-[#18382D] focus-within:ring-1 focus-within:ring-[#18382D] transition-all">
+                <div className="px-3 py-2.5 bg-[#F7F2EA] text-[#746B62] border-r border-[#E6DCCF]">
+                  <User className="w-4 h-4" />
+                </div>
                 <input
                   type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  placeholder="e.g. New Delhi"
-                  className="flex-1 text-sm bg-transparent focus:outline-none"
+                  value={phoneName}
+                  onChange={(e) => setPhoneName(e.target.value)}
+                  placeholder="e.g. Priya Sharma"
+                  required
+                  className="flex-1 px-3 py-2.5 text-sm bg-transparent focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#746B62] mb-1.5">
+                City / Delivery Area (Optional)
+              </label>
+              <div className="flex items-center rounded-xl border border-[#E6DCCF] bg-white overflow-hidden focus-within:border-[#18382D] focus-within:ring-1 focus-within:ring-[#18382D] transition-all">
+                <div className="px-3 py-2.5 bg-[#F7F2EA] text-[#746B62] border-r border-[#E6DCCF]">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  value={phoneCity}
+                  onChange={(e) => setPhoneCity(e.target.value)}
+                  placeholder="e.g. South Delhi, Mumbai"
+                  className="flex-1 px-3 py-2.5 text-sm bg-transparent focus:outline-none"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              disabled={loading || phone.length < 10 || !phoneName.trim()}
+              className="w-full py-3 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
-              <span>Complete Setup &amp; Access Bag</span>
-              <CheckCircle2 className="w-4 h-4 text-[#B88D4E]" />
+              {loading ? "Signing in..." : "Continue as Patron"}
+              <ArrowRight className="w-4 h-4 text-[#B88D4E]" />
             </button>
+
+            <div className="pt-2 border-t border-[#E6DCCF] text-center">
+              <div className="text-[11px] text-[#746B62] flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Instant Access • Saved Cart &amp; Order Tracking</span>
+              </div>
+            </div>
           </form>
         )}
 
+        {/* Footer Support Concierge (Opens chat with ZOYARA Store, NEVER to customer's own number) */}
+        <div className="mt-5 pt-3 border-t border-[#E6DCCF] text-center">
+          <a
+            href={`https://api.whatsapp.com/send?phone=${storeWhatsApp}&text=${encodeURIComponent("Hi ZOYARA, I need assistance with my boutique account / order.")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-[#25D366] hover:text-[#128C7E] font-medium transition-colors"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Need Help? Chat with ZOYARA Concierge</span>
+          </a>
+        </div>
       </div>
     </div>
   );

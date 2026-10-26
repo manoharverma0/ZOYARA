@@ -609,6 +609,33 @@ export function verifyCustomerOtp(phone, otpInput, profileData = {}) {
   return { success: true, user };
 }
 
+export function loginCustomerWithPhone(phone, name = "", email = "", city = "") {
+  const cleanPhone = phone.replace(/\D/g, "");
+  if (cleanPhone.length !== 10) {
+    return { success: false, error: "Please enter a valid 10-digit mobile number." };
+  }
+  const users = getCustomerUsers();
+  let user = users.find(u => u.phone === cleanPhone);
+  if (!user) {
+    user = {
+      id: `usr-${Date.now()}`,
+      phone: cleanPhone,
+      name: name.trim() || "ZOYARA Patron",
+      email: email.trim() || "",
+      city: city.trim() || "",
+      createdAt: new Date().toISOString()
+    };
+    saveCustomerUsers([user, ...users]);
+  } else {
+    if (name.trim()) user.name = name.trim();
+    if (email.trim()) user.email = email.trim();
+    if (city.trim()) user.city = city.trim();
+    saveCustomerUsers(users.map(u => u.phone === cleanPhone ? user : u));
+  }
+  setCurrentCustomer(user);
+  return { success: true, user };
+}
+
 export function updateCustomerProfile(phone, profileData) {
   const cleanPhone = phone.replace(/\D/g, "");
   const users = getCustomerUsers();
