@@ -1,28 +1,32 @@
 import React, { useState } from "react";
 import { 
   Save, 
-  Globe, 
   Store, 
   CreditCard, 
-  ShieldCheck, 
   Search, 
   CheckCircle2, 
   Plus, 
   Trash2, 
-  MapPin, 
-  Phone, 
-  Code2, 
-  Tag, 
-  Eye, 
-  Sparkles,
+  Code2,
+  Lock,
+  Database,
+  Eye,
+  EyeOff,
+  ShieldCheck,
   ExternalLink
 } from "lucide-react";
 import { saveStoreSettings } from "../../services/storage";
 import { applyDynamicSeo } from "../../utils/seo";
 
 export default function StoreSettingsScreen({ settings, onRefreshData }) {
-  const [formData, setFormData] = useState({ ...settings });
-  const [activeTab, setActiveTab] = useState("seo"); // 'seo' | 'general' | 'razorpay' | 'stores' | 'custom_html'
+  const [formData, setFormData] = useState({ 
+    staffPin: "85200",
+    supabaseUrl: "",
+    supabaseAnonKey: "",
+    ...settings 
+  });
+  const [activeTab, setActiveTab] = useState("security"); // 'security' | 'seo' | 'general' | 'razorpay' | 'custom_html'
+  const [showPassword, setShowPassword] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleChange = (field, value) => {
@@ -102,6 +106,7 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
       {/* Tabs */}
       <div className="flex border-b border-[#E6DCCF] bg-white rounded-t-xl overflow-x-auto text-xs font-semibold uppercase tracking-wider scrollbar-none">
         {[
+          { id: "security", label: "Admin Password & Supabase", icon: Lock },
           { id: "seo", label: "SEO & Search Engine Meta", icon: Search },
           { id: "general", label: "Brand & Offline Showrooms", icon: Store },
           { id: "razorpay", label: "Razorpay Gateway", icon: CreditCard },
@@ -127,6 +132,116 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
       {/* Tab Panels */}
       <form onSubmit={handleSave} className="bg-white rounded-b-xl border border-t-0 border-[#E6DCCF] p-6 space-y-6 shadow-2xs">
         
+        {/* ========================================================
+            TAB 0: ADMIN SECURITY & SUPABASE CLOUD DATABASE
+            ======================================================== */}
+        {activeTab === "security" && (
+          <div className="space-y-6">
+            
+            {/* Section A: Admin Password */}
+            <div className="p-5 bg-[#FAF8F5] rounded-xl border border-[#DFD5C6] space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#18382D]">
+                <ShieldCheck className="w-4 h-4 text-[#B88D4E]" />
+                <span>Admin Panel Master Security Password</span>
+              </div>
+              <p className="text-xs text-[#746B62] leading-relaxed">
+                This password protects your private store POS, billing terminal, inventory editor, and financial ledgers.
+              </p>
+
+              <div className="max-w-md">
+                <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                  Master Password / PIN:
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={formData.staffPin || "85200"}
+                    onChange={(e) => handleChange("staffPin", e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white border border-[#DFD5C6] rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:border-[#18382D]"
+                    placeholder="85200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-[#746B62] hover:text-[#18382D] cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <span className="text-[10px] text-[#A09383] mt-1 block">
+                  Current configured password: <code className="font-bold text-[#18382D]">{formData.staffPin || "85200"}</code>
+                </span>
+              </div>
+            </div>
+
+            {/* Section B: Live Cloud Database (Supabase) */}
+            <div className="p-5 bg-white rounded-xl border border-[#DFD5C6] space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#18382D]">
+                  <Database className="w-4 h-4 text-[#B88D4E]" />
+                  <span>Supabase Live Cloud Database Synchronization</span>
+                </div>
+                {formData.supabaseUrl && formData.supabaseAnonKey ? (
+                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                    Live Cloud Configured
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-[10px] font-semibold">
+                    Standalone Local Mode
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-[#746B62] leading-relaxed">
+                Connect your free Supabase PostgreSQL database to allow adding, editing, and deleting products live from any device or location. When connected, all customer devices see updates in real time.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                    Supabase Project URL:
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.supabaseUrl || ""}
+                    onChange={(e) => handleChange("supabaseUrl", e.target.value)}
+                    placeholder="https://xyzcompany.supabase.co"
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs font-mono focus:outline-none focus:border-[#18382D]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                    Supabase Anon / Public API Key:
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.supabaseAnonKey || ""}
+                    onChange={(e) => handleChange("supabaseAnonKey", e.target.value)}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs font-mono focus:outline-none focus:border-[#18382D]"
+                  />
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="p-3 bg-[#F7F2EA] rounded-xl text-[11px] text-[#746B62] space-y-1">
+                <div className="font-semibold text-[#18382D] flex items-center gap-1">
+                  <span>Quick Setup:</span>
+                </div>
+                <ol className="list-decimal pl-4 space-y-0.5">
+                  <li>Create a free account at <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-[#18382D] underline font-medium inline-flex items-center gap-0.5">supabase.com <ExternalLink className="w-2.5 h-2.5" /></a></li>
+                  <li>Copy and execute the pre-written script <code className="bg-white px-1 py-0.5 rounded border border-[#DFD5C6] font-mono text-[10px]">supabase_schema.sql</code> in the Supabase SQL Editor.</li>
+                  <li>Paste your Project URL &amp; Anon Key above and click <strong>Save Settings</strong>.</li>
+                </ol>
+              </div>
+            </div>
+
+          </div>
+        )}
+
         {/* ========================================================
             TAB 1: COMPLETE SEO & GOOGLE SUITE
             ======================================================== */}

@@ -15,7 +15,9 @@ import {
   Receipt, 
   Store, 
   RefreshCw, 
-  CheckCircle2 
+  CheckCircle2,
+  Camera,
+  Image as ImageIcon
 } from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
 import { 
@@ -123,6 +125,49 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
     setProductForm({ ...prod });
     setEditingProduct(prod);
     setIsAddModalOpen(true);
+  };
+
+  const handleImageFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round(height * (MAX_SIZE / width));
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round(width * (MAX_SIZE / height));
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        setProductForm(prev => ({ ...prev, image: compressedDataUrl }));
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProduct = (e) => {
@@ -796,14 +841,49 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
                 </div>
               </div>
 
+              {/* Product Photo: Upload File or URL + Live Preview */}
               <div>
-                <label className="block text-[#6E6152] font-medium mb-1">Image URL:</label>
-                <input
-                  type="url"
-                  value={productForm.image}
-                  onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                  className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg text-[11px]"
-                />
+                <label className="block text-[#6E6152] font-medium mb-1">Product Photo / Image:</label>
+                <div className="flex items-center gap-3 p-2.5 bg-white border border-[#DFD5C6] rounded-xl">
+                  {/* Thumbnail Preview */}
+                  <div className="w-16 h-16 rounded-lg bg-[#F7F2EA] border border-[#E6DCCF] overflow-hidden shrink-0 flex items-center justify-center">
+                    {productForm.image ? (
+                      <img
+                        src={productForm.image}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-[#A09383]" />
+                    )}
+                  </div>
+
+                  {/* Actions: Upload from File / Camera OR Paste URL */}
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <label className="px-2.5 py-1.5 bg-[#18181B] hover:bg-[#2B2B30] text-white rounded-lg text-[10px] font-semibold cursor-pointer flex items-center gap-1.5 transition-colors">
+                        <Camera className="w-3 h-3 text-[#D4AF37]" />
+                        <span>Upload Photo / Camera</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-[10px] text-[#A09383]">Auto-compressed</span>
+                    </div>
+
+                    <input
+                      type="url"
+                      value={productForm.image}
+                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                      className="w-full p-1.5 bg-[#FAF8F5] border border-[#DFD5C6] rounded text-[10px] text-[#4A4036] truncate"
+                      placeholder="Or paste web image URL (https://...)"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>

@@ -14,8 +14,6 @@ import {
   Printer, 
   AlertCircle, 
   RotateCcw,
-  Sparkles,
-  ShoppingBag,
   Tag
 } from "lucide-react";
 import confetti from "canvas-confetti";

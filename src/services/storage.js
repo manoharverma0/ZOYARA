@@ -1,4 +1,10 @@
 import { INITIAL_PRODUCTS, STORE_SETTINGS } from "../data/initialProducts";
+import { 
+  syncProductToSupabase, 
+  deleteProductFromSupabase, 
+  syncOrderToSupabase, 
+  fetchLiveProducts 
+} from "./supabase";
 
 const STORAGE_KEYS = {
   PRODUCTS: "zayara_products_v2", // Upgraded version for curated categories (Bras, Underwear, Jewellery)
@@ -106,6 +112,8 @@ export function addProduct(newProd) {
   saveProducts(updated);
   // Log stock addition
   recordStockAdjustment(newProd.id, newProd.title, "IN", Number(newProd.stock || 0), "Initial Stock Addition");
+  // Sync live to Supabase cloud
+  syncProductToSupabase(newProd).catch(e => console.warn("[Supabase Sync Error]:", e));
   return updated;
 }
 
@@ -113,6 +121,8 @@ export function updateProduct(updatedProd) {
   const current = getProducts();
   const updated = current.map(p => (p.id === updatedProd.id ? updatedProd : p));
   saveProducts(updated);
+  // Sync live to Supabase cloud
+  syncProductToSupabase(updatedProd).catch(e => console.warn("[Supabase Sync Error]:", e));
   return updated;
 }
 
@@ -120,7 +130,23 @@ export function deleteProduct(productId) {
   const current = getProducts();
   const updated = current.filter(p => p.id !== productId);
   saveProducts(updated);
+  // Sync live to Supabase cloud
+  deleteProductFromSupabase(productId).catch(e => console.warn("[Supabase Sync Error]:", e));
   return updated;
+}
+
+// Sync products from Supabase to local storage
+export async function syncWithSupabase() {
+  try {
+    const liveProducts = await fetchLiveProducts();
+    if (liveProducts && liveProducts.length > 0) {
+      saveProducts(liveProducts);
+      return liveProducts;
+    }
+  } catch (err) {
+    console.warn("[ZOYARA] Could not sync with Supabase:", err);
+  }
+  return null;
 }
 
 // --- SALES LEDGER & BILLING API ---
@@ -363,7 +389,11 @@ export function manualStockAdjust(productId, delta, reason) {
 export function getStoreSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return raw ? { ...STORE_SETTINGS, ...JSON.parse(raw) } : STORE_SETTINGS;
+    const parsed = raw ? { ...STORE_SETTINGS, ...JSON.parse(raw) } : STORE_SETTINGS;
+    if (!parsed.staffPin || parsed.staffPin === "1234") {
+      parsed.staffPin = "85200";
+    }
+    return parsed;
   } catch {
     return STORE_SETTINGS;
   }
@@ -499,20 +529,24 @@ export function sendCustomerOtp(phone) {
   if (cleanPhone.length < 10) {
     return { success: false, error: "Please enter a valid 10-digit mobile number." };
   }
-  // Generate reliable 4-digit OTP
+  // Generate real unique 4-digit OTP
   const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
   OTP_CACHE[cleanPhone] = {
     otp: generatedOtp,
-    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+    expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes validity
   };
 
-  // For testing convenience & demo ease, return OTP in response and log to console
-  console.log(`[ZOYARA OTP Service] OTP for +91 ${cleanPhone} is: ${generatedOtp} (or use default 1234)`);
+  const whatsappMessage = encodeURIComponent(
+    `Your ZOYARA Security Verification Code is: ${generatedOtp}. Valid for 5 minutes. Do not share this code with anyone.`
+  );
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${whatsappMessage}`;
+
   return {
     success: true,
     phone: cleanPhone,
     otp: generatedOtp,
-    message: `OTP sent to +91 ${cleanPhone}. (Demo OTP: ${generatedOtp} or 1234)`
+    whatsappUrl,
+    message: `Security code generated for +91 ${cleanPhone}. Valid for 5 minutes.`
   };
 }
 
@@ -520,12 +554,22 @@ export function verifyCustomerOtp(phone, otpInput, profileData = {}) {
   const cleanPhone = phone.replace(/\D/g, "");
   const record = OTP_CACHE[cleanPhone];
   
-  // Accept the generated OTP OR demo master OTP "1234"
-  const isValidOtp = otpInput === "1234" || (record && record.otp === otpInput && Date.now() <= record.expiresAt);
+  // Real verification check without demo bypass
+  const isValidOtp = Boolean(
+    record && 
+    record.otp === otpInput.trim() && 
+    Date.now() <= record.expiresAt
+  );
 
   if (!isValidOtp) {
-    return { success: false, error: "Invalid or expired OTP. Please use code 1234 or request a new OTP." };
+    return { 
+      success: false, 
+      error: "Invalid or expired verification code. Please re-check the OTP or request a new code." 
+    };
   }
+
+  // Clear used OTP to prevent replay
+  delete OTP_CACHE[cleanPhone];
 
   // Find or create customer
   const users = getCustomerUsers();
@@ -562,6 +606,28 @@ export function verifyCustomerOtp(phone, otpInput, profileData = {}) {
   // Save current active session
   setCurrentCustomer(user);
   delete OTP_CACHE[cleanPhone];
+  return { success: true, user };
+}
+
+export function updateCustomerProfile(phone, profileData) {
+  const cleanPhone = phone.replace(/\D/g, "");
+  const users = getCustomerUsers();
+  let user = users.find(u => u.phone === cleanPhone);
+  if (!user) {
+    user = {
+      id: `usr-${Date.now()}`,
+      phone: cleanPhone,
+      name: profileData.name || "ZOYARA Patron",
+      email: profileData.email || "",
+      city: profileData.city || "",
+      createdAt: new Date().toISOString()
+    };
+    saveCustomerUsers([user, ...users]);
+  } else {
+    user = { ...user, ...profileData };
+    saveCustomerUsers(users.map(u => u.phone === cleanPhone ? user : u));
+  }
+  setCurrentCustomer(user);
   return { success: true, user };
 }
 
@@ -758,6 +824,8 @@ export function createOnlineOrder(orderData) {
 
   const updatedOrders = [newOrder, ...orders];
   saveOnlineOrders(updatedOrders);
+  // Live Cloud Supabase Order Sync
+  syncOrderToSupabase(newOrder).catch(e => console.warn("[Supabase Sync Error]:", e));
 
   // 1. Deduct Inventory Stock
   const products = getProducts();

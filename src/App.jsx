@@ -17,24 +17,17 @@ import {
   getStoreSettings, 
   getCurrentCustomer, 
   getWishlist, 
-  toggleWishlistItem 
+  toggleWishlistItem,
+  syncWithSupabase
 } from "./services/storage";
 import { applyDynamicSeo } from "./utils/seo";
 import { 
-  Sparkles, 
+  Sparkles,
   MessageCircle, 
   MapPin, 
   Phone, 
   Lock, 
-  ShieldCheck, 
-  Heart, 
-  ShoppingBag, 
-  Gem, 
-  Feather, 
-  ArrowUp,
-  HelpCircle,
-  Truck,
-  RotateCcw
+  ArrowUp
 } from "lucide-react";
 
 export default function App() {
@@ -102,7 +95,21 @@ export default function App() {
     setProducts(loadedProducts);
     setSettings(loadedSettings);
     applyDynamicSeo(loadedSettings);
+    syncWithSupabase().then(liveProds => {
+      if (liveProds && liveProds.length > 0) {
+        setProducts(liveProds);
+      }
+    });
   };
+
+  // Sync with live Supabase database on mount
+  useEffect(() => {
+    syncWithSupabase().then(liveProds => {
+      if (liveProds && liveProds.length > 0) {
+        setProducts(liveProds);
+      }
+    });
+  }, []);
 
   // Apply dynamic SEO on mount and when settings change
   useEffect(() => {

@@ -1,0 +1,15 @@
+# ZOYARA — Robots Exclusion Protocol
+# https://zoyara.vercel.app
+
+User-agent: *
+Allow: /
+
+# Private staff back-office & billing terminals (prevent indexation of private POS portals)
+Disallow: /?portal=staff
+Disallow: /?portal=billing
+Disallow: /#staff
+Disallow: /#pos
+Disallow: /#billing
+
+# Host & Sitemaps
+Sitemap: https://zoyara.vercel.app/sitemap.xml

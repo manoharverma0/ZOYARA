@@ -352,10 +352,14 @@ export const STORE_SETTINGS = {
   thermalSize: "80mm", // '58mm' or '80mm'
   upiId: "zoyara.store@okaxis", // Dynamic UPI QR code ID
   taxRate: 3, // 3% composite GST for fashion jewellery & garments
-  staffPin: "1234", // Staff portal access PIN
+  staffPin: "85200", // Strong Admin & Staff Portal Access Password
+
+  // Live Cloud Database (Supabase)
+  supabaseUrl: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) || "https://pozjbjhrwtuihiqqjyxr.supabase.co",
+  supabaseAnonKey: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "",
   
   // Payment Gateway (Razorpay)
-  razorpayKeyId: "rzp_test_1DP5mmOlF5G5ag", // Official Razorpay test key / Configurable in Staff Settings
+  razorpayKeyId: (typeof import.meta !== "undefined" && import.meta.env?.VITE_RAZORPAY_KEY_ID) || "rzp_test_1DP5mmOlF5G5ag", // Configurable in Staff Settings or .env
   razorpayEnabled: true,
 
   // Full Technical SEO Settings
@@ -363,7 +367,7 @@ export const STORE_SETTINGS = {
   seoDescription: "ZOYARA — Fashion & Comfort. Curated 18K anti-tarnish waterproof jewellery, zero-wire bras, and seamless intimates crafted for everyday elegance.",
   seoKeywords: "zoyara, fashion and comfort, anti-tarnish jewellery, 18k jewellery, waterproof jewellery, wirefree bras, seamless underwear, affordable luxury jewellery india",
   seoRobots: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
-  siteUrl: "https://zoyara.vercel.app",
+  siteUrl: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SITE_URL) || "https://zoyara.vercel.app",
   ogImage: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=80",
   
   // Google Webmaster & Analytics

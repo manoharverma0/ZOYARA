@@ -5,15 +5,8 @@ import {
   Package, 
   MapPin, 
   FileText, 
-  LogOut, 
-  Clock, 
-  CheckCircle2, 
-  Truck, 
-  ChevronRight, 
-  RotateCcw,
-  Sparkles,
-  Phone,
-  Mail
+  Truck,
+  LogOut
 } from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
 import { getOnlineOrders, logoutCustomer } from "../../services/storage";

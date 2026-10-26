@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Heart, ShoppingBag, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { X, Heart, ShoppingBag, Trash2 } from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
 
 export default function WishlistModal({ 

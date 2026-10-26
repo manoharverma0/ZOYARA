@@ -2,17 +2,12 @@ import React, { useState, useEffect } from "react";
 import { 
   X, 
   ShieldCheck, 
-  Lock, 
-  CreditCard, 
-  Smartphone, 
-  Building2, 
   Truck, 
   Sparkles, 
   ArrowRight, 
   Tag, 
   AlertCircle,
   CheckCircle2,
-  HelpCircle,
   RotateCcw,
   ExternalLink,
   KeyRound,
@@ -59,8 +54,6 @@ export default function CheckoutModal({
   // COD Policy acceptance checkbox
   const [codPolicyAccepted, setCodPolicyAccepted] = useState(true);
 
-  // Processing state
-  const [isProcessing, setIsProcessing] = useState(false);
   const [formError, setFormError] = useState("");
 
   useEffect(() => {

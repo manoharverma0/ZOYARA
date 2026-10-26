@@ -4,19 +4,14 @@ import {
   Sparkles, 
   ShieldCheck, 
   ShoppingBag, 
-  Eye, 
   Heart, 
   Check, 
   Feather, 
   Gem, 
-  Layers, 
   ArrowRight, 
   Star, 
   Gift, 
   Truck, 
-  RotateCcw,
-  Tag,
-  SlidersHorizontal,
   ChevronRight
 } from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
@@ -26,12 +21,12 @@ export default function Storefront({
   products, 
   onAddToCart, 
   onOpenProductDetail, 
-  cartItems,
+  _cartItems,
   selectedCategory = "all",
   onSelectCategory = () => {},
   wishlistIds = [],
   onToggleWishlist = () => {},
-  onOpenInfo = () => {}
+  _onOpenInfo = () => {}
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("featured");
@@ -48,17 +43,6 @@ export default function Storefront({
     { id: "under250", label: "Under ₹250", count: products.filter(p => p.price <= 250).length },
     { id: "antiTarnish", label: "Anti-Tarnish", count: products.filter(p => p.badge?.includes("Anti-Tarnish") || p.material?.toLowerCase().includes("anti-tarnish") || p.material?.toLowerCase().includes("stainless")).length }
   ];
-
-  // Available sub-categories based on selected category
-  const availableSubcategories = useMemo(() => {
-    const list = new Set();
-    products.forEach(p => {
-      if (selectedCategory === "all" || p.category === selectedCategory) {
-        if (p.subCategory) list.add(p.subCategory);
-      }
-    });
-    return Array.from(list);
-  }, [products, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -567,13 +551,18 @@ export default function Storefront({
 
                     {/* Price row */}
                     <div className="pt-3 mt-2 border-t border-[#F7F2EA] flex items-center justify-between">
-                      <div className="flex items-baseline gap-2">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
                         <span className="font-mono text-sm sm:text-base font-bold text-[#18382D]">
                           {formatCurrency(product.price)}
                         </span>
                         <span className="font-mono text-[11px] text-[#746B62] line-through">
                           {formatCurrency(originalPrice)}
                         </span>
+                        {discountPercent > 0 && (
+                          <span className="text-[10px] font-semibold text-[#18382D] bg-[#F7F2EA] px-1.5 py-0.5 rounded">
+                            {discountPercent}% OFF
+                          </span>
+                        )}
                       </div>
 
                       {/* Mobile Quick Add Button */}

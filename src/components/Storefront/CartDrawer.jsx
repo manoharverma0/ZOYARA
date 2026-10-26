@@ -8,7 +8,6 @@ import {
   Gift, 
   ArrowRight, 
   Lock, 
-  ShieldCheck, 
   Sparkles,
   ShoppingBag
 } from "lucide-react";
@@ -21,7 +20,7 @@ export default function CartDrawer({
   cartItems, 
   onUpdateQty, 
   onRemoveItem, 
-  onClearCart,
+  _onClearCart,
   onProceedCheckout 
 }) {
   if (!isOpen) return null;

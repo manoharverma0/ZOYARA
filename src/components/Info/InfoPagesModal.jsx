@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import { 
   X, 
   Sparkles, 
-  ShieldCheck, 
   Truck, 
   RotateCcw, 
   HelpCircle, 
   Phone, 
-  FileText, 
   Heart,
   ChevronDown,
   MessageCircle,

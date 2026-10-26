@@ -9,9 +9,6 @@ import {
   User, 
   Menu, 
   X,
-  Phone,
-  Gift,
-  HelpCircle,
   Gem
 } from "lucide-react";
 

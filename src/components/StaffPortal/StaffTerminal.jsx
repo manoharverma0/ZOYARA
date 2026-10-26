@@ -4,7 +4,6 @@ import {
   Barcode as BarcodeIcon, 
   Package, 
   ExternalLink, 
-  Lock, 
   Store, 
   Users, 
   BookOpen, 
@@ -12,9 +11,7 @@ import {
   Settings as SettingsIcon,
   Menu,
   X,
-  ChevronRight,
-  ShieldCheck,
-  Sparkles
+  ChevronRight
 } from "lucide-react";
 import POSScreen from "../POS/POSScreen";
 import BarcodeStudio from "../BarcodeStudio/BarcodeStudio";

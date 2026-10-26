@@ -12,8 +12,8 @@ export default function StaffAuthModal({ isOpen, onClose, onSuccess }) {
     e.preventDefault();
     // Read PIN from store settings (configurable in Store Settings panel)
     const storeSettings = getStoreSettings();
-    const validPin = storeSettings.staffPin || "1234";
-    if (pin === validPin) {
+    const validPin = storeSettings.staffPin || "85200";
+    if (pin.trim() === validPin.trim()) {
       setError(false);
       localStorage.setItem("zayara_staff_authenticated", "true");
       onSuccess();
