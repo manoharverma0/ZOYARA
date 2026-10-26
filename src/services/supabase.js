@@ -1,14 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import { getStoreSettings } from "./storage";
 
-// Read Supabase credentials from .env or dynamically saved store settings
+const DEFAULT_SUPABASE_URL = "https://pozjbjhrwtuihiqqjyxr.supabase.co";
+const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvempiamhyd3R1aWhpcXFqeXhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjQ2NDMsImV4cCI6MjEwODYwMDY0M30.e4EHCWpdc5BaMY_LxlJli419ES6o-DqQP-p1Xb6f-WA";
+
+// Read Supabase credentials from .env, runtime store settings, or project defaults
 export function getSupabaseCredentials() {
   const settings = getStoreSettings();
   const envUrl = typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL;
   const envKey = typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY;
 
-  const supabaseUrl = (settings?.supabaseUrl || envUrl || "").trim();
-  const supabaseAnonKey = (settings?.supabaseAnonKey || envKey || "").trim();
+  const supabaseUrl = (envUrl || settings?.supabaseUrl || DEFAULT_SUPABASE_URL || "").trim();
+  const supabaseAnonKey = (envKey || settings?.supabaseAnonKey || DEFAULT_SUPABASE_KEY || "").trim();
 
   const isConfigured = Boolean(
     supabaseUrl && 

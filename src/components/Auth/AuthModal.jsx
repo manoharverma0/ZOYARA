@@ -24,12 +24,13 @@ import {
 } from "../../services/supabase";
 
 export default function AuthModal({ isOpen, onClose, onSuccess }) {
-  const [authMode, setAuthMode] = useState("whatsapp"); // 'whatsapp' | 'email'
+  const [authMode, setAuthMode] = useState("email"); // 'email' (primary free Supabase OTP) | 'whatsapp'
   const [step, setStep] = useState("input"); // 'input' | 'otp' | 'profile'
   
   // Phone / WhatsApp Auth State
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState(["", "", "", ""]);
+  const [generatedPhoneCode, setGeneratedPhoneCode] = useState("");
   const [whatsappLink, setWhatsappLink] = useState("");
 
   // Email OTP (Supabase) State
@@ -75,8 +76,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       const res = sendCustomerOtp(cleanPhone);
       setLoading(false);
       if (res.success) {
+        setGeneratedPhoneCode(res.otp || "");
         setWhatsappLink(res.whatsappUrl || "");
-        setNotice(`Verification code generated for +91 ${cleanPhone}.`);
+        setNotice(`Security Code: ${res.otp} (Valid for 5 mins). Click WhatsApp below or enter code directly.`);
         setStep("otp");
         setCountdown(60);
         setOtp(["", "", "", ""]);
@@ -404,6 +406,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                 />
               ))}
             </div>
+
+            {/* Verification Code Box (Auto-generated for session) */}
+            {generatedPhoneCode && (
+              <div className="p-2.5 bg-[#F7F2EA] border border-[#DFD5C6] rounded-xl text-center">
+                <span className="text-[10px] text-[#746B62] block uppercase tracking-wider mb-0.5 font-medium">Your 4-Digit Security Code:</span>
+                <span className="font-mono text-base font-bold text-[#18382D] tracking-[0.25em]">{generatedPhoneCode}</span>
+              </div>
+            )}
 
             {/* Instant Free WhatsApp Verification Button */}
             {whatsappLink && (
