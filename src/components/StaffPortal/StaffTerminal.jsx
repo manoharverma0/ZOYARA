@@ -11,11 +11,13 @@ import {
   Settings as SettingsIcon,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Truck
 } from "lucide-react";
 import POSScreen from "../POS/POSScreen";
 import BarcodeStudio from "../BarcodeStudio/BarcodeStudio";
 import InventoryScreen from "../Inventory/InventoryScreen";
+import OrdersScreen from "./OrdersScreen";
 import KhataScreen from "./KhataScreen";
 import ExpenseScreen from "./ExpenseScreen";
 import ReportsScreen from "./ReportsScreen";
@@ -43,6 +45,14 @@ export default function StaffTerminal({
       desc: "Fast register & thermal print",
       badge: "Active",
       badgeColor: "bg-emerald-900/60 text-emerald-300 border border-emerald-700/50"
+    },
+    { 
+      id: "orders", 
+      label: "Online Orders", 
+      icon: Truck, 
+      desc: "Incoming orders & dispatch fulfillment",
+      badge: "Orders",
+      badgeColor: "bg-blue-900/60 text-blue-300 border border-blue-700/50"
     },
     { 
       id: "inventory", 
@@ -265,6 +275,13 @@ export default function StaffTerminal({
           {activeStaffTab === "pos" && (
             <POSScreen
               products={products}
+              settings={settings}
+              onRefreshData={onRefreshData}
+            />
+          )}
+
+          {activeStaffTab === "orders" && (
+            <OrdersScreen
               settings={settings}
               onRefreshData={onRefreshData}
             />

@@ -341,12 +341,12 @@ export const INITIAL_PRODUCTS = [
 ];
 
 export const STORE_SETTINGS = {
-  name: "ZOYARA",
+  name: "ZOYARA FASHION & COMFORT",
   tagline: "Fashion & Comfort",
-  address: "Shop 4, Luxury Arcade, Main Market, New Delhi - 110049",
-  phone: "+91 98765 43210",
-  whatsappNumber: "919876543210",
-  email: "care@zoyara.in",
+  address: "45/1 Near Bangali Chourah, Indore, Madhya Pradesh - 452001",
+  phone: "+91 74709 32714",
+  whatsappNumber: "917470932714",
+  email: "zoyarafashion@gmail.com",
   gstin: "07AAAAZ0000A1Z5", // GSTIN for billing
   receiptFooter: "Thank you for shopping with ZOYARA. For hygiene standards, intimate wear cannot be returned once opened. Jewellery exchange within 7 days with tag.",
   thermalSize: "80mm", // '58mm' or '80mm'
@@ -383,26 +383,15 @@ export const STORE_SETTINGS = {
   // Offline Stores & Boutique Addresses
   offlineStores: [
     {
-      id: "store-delhi",
+      id: "store-indore",
       name: "ZOYARA Flagship Boutique",
-      address: "Shop 4, Luxury Arcade, Main Market, South Extension",
-      city: "New Delhi",
-      state: "Delhi",
-      pincode: "110049",
-      phone: "+91 98765 43210",
+      address: "45/1 Near Bangali Chourah",
+      city: "Indore",
+      state: "Madhya Pradesh",
+      pincode: "452001",
+      phone: "+91 74709 32714",
       hours: "10:30 AM – 9:00 PM (All 7 Days)",
-      mapsUrl: "https://maps.google.com/?q=South+Extension+New+Delhi"
-    },
-    {
-      id: "store-mumbai",
-      name: "ZOYARA Experience Studio",
-      address: "G-12, Palladium Galleria, High Street Phoenix, Lower Parel",
-      city: "Mumbai",
-      state: "Maharashtra",
-      pincode: "400013",
-      phone: "+91 98112 23344",
-      hours: "11:00 AM – 9:30 PM",
-      mapsUrl: "https://maps.google.com/?q=Lower+Parel+Mumbai"
+      mapsUrl: "https://maps.google.com/?q=Bangali+Chourah+Indore"
     }
   ]
 };

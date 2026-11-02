@@ -832,6 +832,23 @@ export function saveOnlineOrders(orders) {
   }
 }
 
+export function updateOnlineOrderStatus(orderId, newStatus, trackingData = {}) {
+  const orders = getOnlineOrders();
+  const updatedOrders = orders.map(ord => {
+    if (ord.orderId === orderId) {
+      return {
+        ...ord,
+        status: newStatus,
+        ...trackingData,
+        updatedAt: new Date().toISOString()
+      };
+    }
+    return ord;
+  });
+  saveOnlineOrders(updatedOrders);
+  return updatedOrders;
+}
+
 export function createOnlineOrder(orderData) {
   const orders = getOnlineOrders();
   const year = new Date().getFullYear();

@@ -418,17 +418,22 @@ export default function App() {
           {/* Customer Care & Policies */}
           <div>
             <h4 className="font-serif text-sm tracking-widest uppercase text-[#B88D4E] mb-3">
-              Client Care &amp; Guide
+              Customer Policies
             </h4>
             <ul className="space-y-2 text-xs text-[#E7ECE4]">
               <li>
-                <button onClick={() => handleOpenInfo("about")} className="hover:text-white transition-colors cursor-pointer">
-                  The Atelier Story
+                <button onClick={() => handleOpenInfo("terms")} className="hover:text-white transition-colors cursor-pointer">
+                  Terms of Service
                 </button>
               </li>
               <li>
-                <button onClick={() => handleOpenInfo("care")} className="hover:text-white transition-colors cursor-pointer">
-                  Jewellery Care Guide
+                <button onClick={() => handleOpenInfo("privacy")} className="hover:text-white transition-colors cursor-pointer">
+                  Privacy Policy
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleOpenInfo("returns")} className="hover:text-white transition-colors cursor-pointer">
+                  Cancellation &amp; Refund Policy
                 </button>
               </li>
               <li>
@@ -437,8 +442,13 @@ export default function App() {
                 </button>
               </li>
               <li>
-                <button onClick={() => handleOpenInfo("returns")} className="hover:text-white transition-colors cursor-pointer">
-                  Returns &amp; Hygiene Exchange
+                <button onClick={() => handleOpenInfo("contact")} className="hover:text-white transition-colors cursor-pointer">
+                  Contact Us &amp; Grievances
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleOpenInfo("about")} className="hover:text-white transition-colors cursor-pointer">
+                  About ZOYARA
                 </button>
               </li>
               <li>
