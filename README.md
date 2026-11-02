@@ -30,7 +30,8 @@ Copy [`.env.example`](file:///g:/gemini%20projects/ZAYARA/.env.example) to `.env
 
 ```env
 # Razorpay Payment Gateway ID (rzp_live_... or rzp_test_...)
-VITE_RAZORPAY_KEY_ID=rzp_test_1DP5mmOlF5G5ag
+VITE_RAZORPAY_KEY_ID=rzp_test_TvPbH3s2mTOTXN
+RAZORPAY_KEY_SECRET=lQaL1Qmk91WpbrSi8DgRUCW4
 
 # Canonical Site URL
 VITE_SITE_URL=https://zoyara.vercel.app

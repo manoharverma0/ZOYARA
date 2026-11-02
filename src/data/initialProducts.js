@@ -359,7 +359,7 @@ export const STORE_SETTINGS = {
   supabaseAnonKey: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "",
   
   // Payment Gateway (Razorpay)
-  razorpayKeyId: (typeof import.meta !== "undefined" && import.meta.env?.VITE_RAZORPAY_KEY_ID) || "rzp_test_1DP5mmOlF5G5ag", // Configurable in Staff Settings or .env
+  razorpayKeyId: (typeof import.meta !== "undefined" && import.meta.env?.VITE_RAZORPAY_KEY_ID) || "rzp_test_TvPbH3s2mTOTXN", // Configurable in Staff Settings or .env
   razorpayEnabled: true,
 
   // Full Technical SEO Settings
