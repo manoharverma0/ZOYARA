@@ -19,7 +19,7 @@ import {
   Camera,
   Image as ImageIcon
 } from "lucide-react";
-import { formatCurrency } from "../../utils/barcode";
+import { formatCurrency, generateRandomBarcode } from "../../utils/barcode";
 import { 
   getSales, 
   addProduct, 

@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { getStoreSettings } from "./storage";
 
-const DEFAULT_SUPABASE_URL = "https://pozjbjhrwtuihiqqjyxr.supabase.co";
-const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvempiamhyd3R1aWhpcXFqeXhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjQ2NDMsImV4cCI6MjEwODYwMDY0M30.e4EHCWpdc5BaMY_LxlJli419ES6o-DqQP-p1Xb6f-WA";
+const DEFAULT_SUPABASE_URL = "";
+const DEFAULT_SUPABASE_KEY = "";
 
 // Read Supabase credentials from .env, runtime store settings, or project defaults
 export function getSupabaseCredentials() {
@@ -17,7 +17,8 @@ export function getSupabaseCredentials() {
     supabaseUrl && 
     supabaseAnonKey && 
     supabaseUrl.startsWith("https://") &&
-    !supabaseUrl.includes("your-project")
+    !supabaseUrl.includes("your-project") &&
+    !supabaseUrl.includes("pozjbjhrwtuihiqqjyxr")
   );
 
   return { supabaseUrl, supabaseAnonKey, isConfigured };

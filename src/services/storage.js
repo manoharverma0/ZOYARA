@@ -85,8 +85,8 @@ export function getProducts() {
       return INITIAL_PRODUCTS;
     }
     const parsed = JSON.parse(raw);
-    // Ensure all items belong to allowed categories (Jewellery, Bras, Underwear)
-    const valid = parsed.filter(p => ["Jewellery", "Bras", "Underwear"].includes(p.category));
+    // Ensure all items have valid product structure
+    const valid = Array.isArray(parsed) ? parsed.filter(p => p && p.id && p.title && typeof p.price === "number") : [];
     if (valid.length === 0) {
       localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
       return INITIAL_PRODUCTS;

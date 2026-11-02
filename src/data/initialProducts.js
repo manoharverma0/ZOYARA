@@ -355,7 +355,7 @@ export const STORE_SETTINGS = {
   staffPin: "85200", // Strong Admin & Staff Portal Access Password
 
   // Live Cloud Database (Supabase)
-  supabaseUrl: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) || "https://pozjbjhrwtuihiqqjyxr.supabase.co",
+  supabaseUrl: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) || "",
   supabaseAnonKey: (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) || "",
   
   // Payment Gateway (Razorpay)
