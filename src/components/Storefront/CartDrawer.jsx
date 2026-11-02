@@ -4,7 +4,6 @@ import {
   Trash2, 
   Plus, 
   Minus, 
-  MessageCircle, 
   Gift, 
   ArrowRight, 
   Lock, 
@@ -12,7 +11,6 @@ import {
   ShoppingBag
 } from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
-import { STORE_SETTINGS } from "../../data/initialProducts";
 
 export default function CartDrawer({ 
   isOpen, 
@@ -29,25 +27,6 @@ export default function CartDrawer({
   const freeShippingThreshold = 499;
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const shippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
-
-  const handleSendWhatsAppOrder = () => {
-    if (cartItems.length === 0) return;
-
-    const itemsSummary = cartItems
-      .map((item, idx) => `${idx + 1}. *${item.title}* (${item.selectedSize || "Standard"}) - Qty: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(item.price * item.quantity)}`)
-      .join("\n");
-
-    const message = encodeURIComponent(
-      `*NEW ONLINE ORDER — ZOYARA ATELIER & BOUTIQUE* ✨\n\n` +
-      `*Ordered Items:*\n${itemsSummary}\n\n` +
-      `*Subtotal:* ${formatCurrency(subtotal)}\n` +
-      `*Delivery:* ${subtotal >= freeShippingThreshold ? "FREE EXPRESS" : "Standard ₹49"}\n\n` +
-      `Please confirm stock availability and share payment QR / bank details.`
-    );
-
-    const whatsappNum = STORE_SETTINGS.whatsappNumber || "919876543210";
-    window.open(`https://wa.me/${whatsappNum}?text=${message}`, "_blank");
-  };
 
   return (
     <div 
@@ -210,15 +189,6 @@ export default function CartDrawer({
               <Lock className="w-3.5 h-3.5 text-[#B88D4E]" />
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4 text-[#B88D4E]" />
-            </button>
-
-            {/* SECONDARY: Quick WhatsApp Order */}
-            <button
-              onClick={handleSendWhatsAppOrder}
-              className="w-full py-2.5 bg-white hover:bg-[#FFFDFA] text-[#18382D] border border-[#E6DCCF] rounded-xl text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
-            >
-              <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-              <span>Or Order via WhatsApp</span>
             </button>
           </div>
         )}
