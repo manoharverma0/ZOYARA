@@ -257,40 +257,41 @@ export default function Storefront({
       </section>
 
       {/* ========================================================
-          3. ANTI-TARNISH CAMPAIGN SPOTLIGHT BANNER
+          3. ANTI-TARNISH CAMPAIGN SPOTLIGHT BANNER (Dynamic & Mobile-First)
           ======================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+      <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-12">
         <div className="rounded-3xl bg-[#18382D] text-white p-6 sm:p-10 lg:p-12 border border-[#E9D9BD]/20 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-md">
-          <div className="space-y-4 max-w-lg z-10">
+          <div className="space-y-4 max-w-lg z-10 text-center md:text-left">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#E9D9BD] text-xs font-semibold uppercase tracking-widest">
               <Sparkles className="w-3.5 h-3.5 text-[#B88D4E]" />
-              <span>Vacuum PVD Science</span>
+              <span>{settings?.spotlightBadge || "Vacuum PVD Science"}</span>
             </div>
             <h3 className="font-serif text-2xl sm:text-4xl font-light leading-snug">
-              Say Goodbye to Green Skin &amp; Tarnished Chains.
+              {settings?.spotlightHeadline || "Say Goodbye to Green Skin & Tarnished Chains."}
             </h3>
             <p className="text-xs sm:text-sm text-[#E7ECE4] leading-relaxed">
-              Every ZOYARA jewellery piece is finished with an advanced 18K vacuum gold dip over hypoallergenic stainless steel. Wear it to college, in the shower, or through intense summer days without discoloration.
+              {settings?.spotlightDescription || "Every ZOYARA jewellery piece is finished with an advanced 18K vacuum gold dip over hypoallergenic stainless steel. Wear it to college, in the shower, or through intense summer days without discoloration."}
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex justify-center md:justify-start">
               <button
                 onClick={() => {
                   onSelectCategory("antiTarnish");
                   document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="px-5 py-2.5 bg-[#B88D4E] hover:bg-[#A37B3E] text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 bg-[#B88D4E] hover:bg-[#A37B3E] active:scale-95 text-white rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 touch-manipulation shadow-sm"
               >
-                <span>View Anti-Tarnish Edit</span>
+                <span>{settings?.spotlightButtonText || "View Anti-Tarnish Edit"}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="w-full md:w-80 aspect-[4/3] rounded-2xl overflow-hidden border border-[#E9D9BD]/20 shadow-xl shrink-0 z-10">
+          <div className="w-full md:w-80 aspect-[4/3] rounded-2xl overflow-hidden border border-[#E9D9BD]/20 shadow-xl shrink-0 z-10 max-w-xs sm:max-w-sm md:max-w-none mx-auto">
             <img
-              src="https://images.unsplash.com/photo-1611591477439-5103fc918f6f?auto=format&fit=crop&w=800&q=80"
+              src={settings?.spotlightImageUrl || "https://images.unsplash.com/photo-1611591477439-5103fc918f6f?auto=format&fit=crop&w=800&q=80"}
               alt="Anti-Tarnish Medallion"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
         </div>

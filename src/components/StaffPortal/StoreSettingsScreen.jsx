@@ -18,7 +18,9 @@ import {
   Image as ImageIcon,
   Upload,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Camera,
+  ChevronRight
 } from "lucide-react";
 import { saveStoreSettings } from "../../services/storage";
 import { applyDynamicSeo } from "../../utils/seo";
@@ -492,6 +494,218 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
                       value={formData.heroDescription || "Why should understated luxury cost thousands? ZOYARA crafts vacuum 18K anti-tarnish waterproof jewellery, cloud-soft wireless bralettes, and seamless cotton-gusset intimates — accessible from ₹150 to ₹400."}
                       onChange={(e) => handleChange("heroDescription", e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-[#DFD5C6] rounded-xl text-xs text-[#746B62] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Anti-Tarnish Campaign Spotlight Banner & Image Customizer */}
+            <div className="p-6 bg-[#FAF8F5] rounded-3xl border border-[#DFD5C6] space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DFD5C6] pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-base font-semibold text-[#18382D]">
+                    <Sparkles className="w-5 h-5 text-[#B88D4E]" />
+                    <span>Anti-Tarnish Campaign Spotlight Banner &amp; Image Customizer</span>
+                  </div>
+                  <p className="text-xs text-[#746B62]">
+                    Live Interactive Preview: Edit photo, text, badges, and CTA button. Changes reflect immediately on your storefront.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="px-3.5 py-1.5 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors">
+                    <Camera className="w-3.5 h-3.5 text-[#B88D4E]" />
+                    <span>Upload Banner Image</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleChange("spotlightImageUrl", dataUrl))} 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Exact Live Banner Component from Storefront */}
+              <div className="rounded-3xl bg-[#18382D] text-white p-6 sm:p-10 lg:p-12 border border-[#E9D9BD]/20 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 shadow-md">
+                <div className="space-y-4 max-w-lg z-10 text-center md:text-left">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#E9D9BD] text-xs font-semibold uppercase tracking-widest">
+                    <Sparkles className="w-3.5 h-3.5 text-[#B88D4E]" />
+                    <span>{formData.spotlightBadge || "Vacuum PVD Science"}</span>
+                  </div>
+                  <h3 className="font-serif text-2xl sm:text-4xl font-light leading-snug">
+                    {formData.spotlightHeadline || "Say Goodbye to Green Skin & Tarnished Chains."}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#E7ECE4] leading-relaxed">
+                    {formData.spotlightDescription || "Every ZOYARA jewellery piece is finished with an advanced 18K vacuum gold dip over hypoallergenic stainless steel. Wear it to college, in the shower, or through intense summer days without discoloration."}
+                  </p>
+                  <div className="pt-2 flex justify-center md:justify-start">
+                    <div className="px-5 py-2.5 bg-[#B88D4E] text-white rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm pointer-events-none">
+                      <span>{formData.spotlightButtonText || "View Anti-Tarnish Edit"}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* The Interactive Image in the Banner with Edit Overlay */}
+                <div className="w-full md:w-80 aspect-[4/3] rounded-2xl overflow-hidden border border-[#E9D9BD]/20 shadow-xl shrink-0 z-10 relative group">
+                  <img
+                    alt="Anti-Tarnish Medallion"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    src={formData.spotlightImageUrl || "https://images.unsplash.com/photo-1611591477439-5103fc918f6f?auto=format&fit=crop&w=800&q=80"}
+                  />
+                  {/* Edit Image Overlay */}
+                  <label className="absolute inset-0 bg-black/60 opacity-90 sm:opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-center p-3 gap-2">
+                    <div className="w-10 h-10 rounded-full bg-[#B88D4E] text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-white drop-shadow">
+                      Click to Edit / Change Image
+                    </span>
+                    <span className="text-[10px] text-[#E9D9BD] bg-black/50 px-2.5 py-0.5 rounded-full font-mono">
+                      Upload file from Device
+                    </span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleChange("spotlightImageUrl", dataUrl))} 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Image Source & Curated Presets */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+                {/* Left Column: Image URL & Direct Upload Controls */}
+                <div className="bg-white p-4 rounded-2xl border border-[#DFD5C6] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-[#18382D] flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-[#B88D4E]" />
+                      <span>Spotlight Image Source URL:</span>
+                    </label>
+                    <label className="text-[11px] font-semibold text-[#18382D] hover:text-[#B88D4E] flex items-center gap-1 cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload File</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleChange("spotlightImageUrl", dataUrl))} 
+                      />
+                    </label>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={formData.spotlightImageUrl || "https://images.unsplash.com/photo-1611591477439-5103fc918f6f?auto=format&fit=crop&w=800&q=80"}
+                    onChange={(e) => handleChange("spotlightImageUrl", e.target.value)}
+                    placeholder="Paste image URL (https://...)"
+                    className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs text-[#1B1A18] focus:outline-none focus:border-[#18382D] font-mono"
+                  />
+
+                  {/* Preset Swatches */}
+                  <div>
+                    <span className="text-[11px] font-medium text-[#746B62] block mb-2">
+                      Or pick from Curated Atelier Jewellery Shots:
+                    </span>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[
+                        { label: "Medallion", url: "https://images.unsplash.com/photo-1611591477439-5103fc918f6f?auto=format&fit=crop&w=800&q=80" },
+                        { label: "18K Chain", url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80" },
+                        { label: "Gold Ring", url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80" },
+                        { label: "Chunky Hoops", url: "https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=800&q=80" },
+                        { label: "Layered Edit", url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=800&q=80" }
+                      ].map((preset) => (
+                        <button
+                          type="button"
+                          key={preset.label}
+                          onClick={() => handleChange("spotlightImageUrl", preset.url)}
+                          className={`group flex flex-col items-center gap-1 p-1 rounded-xl border text-center transition-all cursor-pointer ${
+                            formData.spotlightImageUrl === preset.url 
+                              ? "border-[#18382D] bg-[#18382D]/10 ring-2 ring-[#18382D]/20" 
+                              : "border-[#DFD5C6] hover:border-[#18382D]/40 bg-[#FAF8F5]"
+                          }`}
+                        >
+                          <img src={preset.url} alt={preset.label} className="w-full aspect-square object-cover rounded-lg" />
+                          <span className="text-[10px] font-medium text-[#18382D] truncate w-full">{preset.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Editable Banner Text Fields */}
+                <div className="bg-white p-4 rounded-2xl border border-[#DFD5C6] space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Technology Badge / Label:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.spotlightBadge || "Vacuum PVD Science"}
+                      onChange={(e) => handleChange("spotlightBadge", e.target.value)}
+                      placeholder="Vacuum PVD Science"
+                      className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Editorial Headline:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.spotlightHeadline || "Say Goodbye to Green Skin & Tarnished Chains."}
+                      onChange={(e) => handleChange("spotlightHeadline", e.target.value)}
+                      placeholder="Say Goodbye to Green Skin & Tarnished Chains."
+                      className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                        CTA Button Text:
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.spotlightButtonText || "View Anti-Tarnish Edit"}
+                        onChange={(e) => handleChange("spotlightButtonText", e.target.value)}
+                        placeholder="View Anti-Tarnish Edit"
+                        className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                        Reset to Default:
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleChange("spotlightBadge", "Vacuum PVD Science");
+                          handleChange("spotlightHeadline", "Say Goodbye to Green Skin & Tarnished Chains.");
+                          handleChange("spotlightDescription", "Every ZOYARA jewellery piece is finished with an advanced 18K vacuum gold dip over hypoallergenic stainless steel. Wear it to college, in the shower, or through intense summer days without discoloration.");
+                          handleChange("spotlightButtonText", "View Anti-Tarnish Edit");
+                          handleChange("spotlightImageUrl", "https://images.unsplash.com/photo-1611591477439-5103fc918f6f?auto=format&fit=crop&w=800&q=80");
+                        }}
+                        className="w-full px-3 py-2 bg-[#FAF8F5] hover:bg-[#E6DCCF] border border-[#DFD5C6] rounded-xl text-xs font-semibold text-[#746B62] hover:text-[#18382D] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Restore Defaults</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Detailed Paragraph Description:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.spotlightDescription || "Every ZOYARA jewellery piece is finished with an advanced 18K vacuum gold dip over hypoallergenic stainless steel. Wear it to college, in the shower, or through intense summer days without discoloration."}
+                      onChange={(e) => handleChange("spotlightDescription", e.target.value)}
+                      className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs text-[#746B62] focus:outline-none focus:border-[#18382D]"
                     />
                   </div>
                 </div>

@@ -210,7 +210,7 @@ export default function App() {
 
   // DEFAULT: REDESIGNED LUXURY CUSTOMER STOREFRONT
   return (
-    <div className="min-h-screen bg-[#F7F2EA] text-[#1B1A18] flex flex-col font-sans selection:bg-[#18382D] selection:text-[#FFFDFA]">
+    <div className="min-h-screen bg-[#F7F2EA] text-[#1B1A18] flex flex-col font-sans selection:bg-[#18382D] selection:text-[#FFFDFA] w-full max-w-full overflow-x-hidden">
       
       {/* 1. Redesigned Luxury Navbar */}
       <Navbar
@@ -237,7 +237,7 @@ export default function App() {
       />
 
       {/* 2. Customer Storefront Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">
         <Storefront
           products={products}
           onAddToCart={handleAddToCart}

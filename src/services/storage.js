@@ -81,20 +81,23 @@ export function getProducts() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
-      return INITIAL_PRODUCTS;
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+      return [];
     }
     const parsed = JSON.parse(raw);
-    // Ensure all items have valid product structure
-    const valid = Array.isArray(parsed) ? parsed.filter(p => p && p.id && p.title && typeof p.price === "number") : [];
-    if (valid.length === 0) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
-      return INITIAL_PRODUCTS;
+    // Filter out any legacy hardcoded demo products (zy-jwl-, zy-bra-, zy-und-)
+    const valid = Array.isArray(parsed) 
+      ? parsed.filter(p => p && p.id && p.title && typeof p.price === "number" && !p.id.startsWith("zy-jwl-") && !p.id.startsWith("zy-bra-") && !p.id.startsWith("zy-und-")) 
+      : [];
+    
+    // Automatically wipe demo products from localStorage if present
+    if (Array.isArray(parsed) && parsed.length !== valid.length) {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(valid));
     }
     return valid;
   } catch (e) {
     console.error("Error reading products:", e);
-    return INITIAL_PRODUCTS;
+    return [];
   }
 }
 

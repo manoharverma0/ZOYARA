@@ -17,17 +17,35 @@
     --font-mono: 'JetBrains Mono', monospace;
   }
 
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: #F7F2EA;
     color: #1B1A18;
     margin: 0;
     padding: 0;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
 
   #root {
     width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     min-height: 100vh;
     display: flex;
     flex-direction: column;

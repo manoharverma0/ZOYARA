@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   X, 
   Trash2, 
@@ -21,6 +21,19 @@ export default function CartDrawer({
   _onClearCart,
   onProceedCheckout 
 }) {
+  useEffect(() => {
+    if (isOpen) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -30,11 +43,11 @@ export default function CartDrawer({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex justify-end bg-[#121214]/65 backdrop-blur-xs transition-opacity animate-fadeIn" 
+      className="fixed inset-0 z-50 flex justify-end bg-[#121214]/65 backdrop-blur-xs transition-opacity animate-fadeIn overflow-hidden" 
       onClick={onClose}
     >
       <div 
-        className="bg-[#FFFDFA] w-full max-w-md h-full shadow-2xl flex flex-col justify-between border-l border-[#E6DCCF] relative text-[#1B1A18]"
+        className="bg-[#FFFDFA] w-full max-w-full sm:max-w-md h-full shadow-2xl flex flex-col justify-between border-l border-[#E6DCCF] relative text-[#1B1A18] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
