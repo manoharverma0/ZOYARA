@@ -374,8 +374,8 @@ export default function Storefront({
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
             
             {/* Price Tier Filters */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[#746B62] text-[11px] font-semibold uppercase tracking-wider mr-1">Price:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none max-w-full">
+              <span className="text-[#746B62] text-[11px] font-semibold uppercase tracking-wider mr-1 shrink-0">Price:</span>
               {[
                 { id: "all", label: "All Prices" },
                 { id: "under200", label: "Under ₹200" },
@@ -385,7 +385,7 @@ export default function Storefront({
                 <button
                   key={tier.id}
                   onClick={() => setPriceFilter(tier.id)}
-                  className={`px-3 py-1 rounded-lg transition-colors cursor-pointer text-xs ${
+                  className={`px-3 py-1 rounded-lg transition-colors cursor-pointer text-xs shrink-0 whitespace-nowrap ${
                     priceFilter === tier.id
                       ? "bg-[#18382D] text-white font-medium"
                       : "bg-white text-[#746B62] hover:bg-[#F7F2EA] border border-[#E6DCCF]"

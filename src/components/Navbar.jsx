@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   ShoppingBag, 
   Sparkles, 
@@ -32,10 +33,13 @@ export default function Navbar({
   // Prevent background scrolling when mobile menu drawer is open
   useEffect(() => {
     if (mobileMenuOpen) {
-      const originalOverflow = document.body.style.overflow;
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
       };
     }
   }, [mobileMenuOpen]);
@@ -88,18 +92,18 @@ export default function Navbar({
       </div>
 
       {/* 2. Main Navigation Bar with Prominent Left-Aligned Logo */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-22 gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 lg:h-22 gap-2 sm:gap-4">
           
-          {/* LEFT: Mobile Menu Button + Prominent Brand Logo (First from user perspective) */}
-          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+          {/* LEFT: Mobile Menu Button + Prominent Brand Logo */}
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             <div className="lg:hidden">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 -ml-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 -ml-1 text-[#18382D] hover:bg-[#E7ECE4] rounded-lg transition-colors cursor-pointer"
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
               </button>
             </div>
 
@@ -107,10 +111,10 @@ export default function Navbar({
               onClick={() => handleNavClick("all")}
               className="cursor-pointer group flex flex-col items-start select-none"
             >
-              <span className="font-serif text-3xl sm:text-4xl lg:text-[40px] tracking-[0.16em] font-extrabold text-[#18382D] group-hover:text-[#B88D4E] transition-colors leading-none drop-shadow-2xs">
+              <span className="font-serif text-2xl sm:text-3xl lg:text-[40px] tracking-[0.14em] sm:tracking-[0.16em] font-extrabold text-[#18382D] group-hover:text-[#B88D4E] transition-colors leading-none drop-shadow-2xs">
                 ZOYARA
               </span>
-              <span className="text-[10px] sm:text-[11px] tracking-[0.34em] text-[#B88D4E] uppercase font-sans mt-1 font-bold whitespace-nowrap">
+              <span className="text-[9px] sm:text-[11px] tracking-[0.22em] sm:tracking-[0.34em] text-[#B88D4E] uppercase font-sans mt-0.5 sm:mt-1 font-bold whitespace-nowrap">
                 Fashion &amp; Comfort
               </span>
             </div>
@@ -135,26 +139,26 @@ export default function Navbar({
           </nav>
 
           {/* RIGHT: Action Icons: Search, Wishlist, Account, Shopping Bag, Staff Portal */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center justify-end gap-1 sm:gap-2.5 shrink-0">
             
             {/* Quick Search */}
             <button
               onClick={openSearch}
-              className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer"
               title="Search Collection"
             >
-              <Search className="w-5 h-5 text-[#18382D]" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#18382D]" />
             </button>
 
             {/* Wishlist */}
             <button
               onClick={openWishlist}
-              className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer relative"
+              className="p-1.5 sm:p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer relative"
               title="Saved Wishlist"
             >
-              <Heart className={`w-5 h-5 ${wishlistCount > 0 ? "fill-[#18382D] text-[#18382D]" : "text-[#18382D]"}`} />
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${wishlistCount > 0 ? "fill-[#18382D] text-[#18382D]" : "text-[#18382D]"}`} />
               {wishlistCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-[#B88D4E] text-white text-[10px] font-bold rounded-full flex items-center justify-center font-mono">
+                <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#B88D4E] text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center font-mono">
                   {wishlistCount}
                 </span>
               )}
@@ -163,10 +167,10 @@ export default function Navbar({
             {/* Customer Account / Login with OTP */}
             <button
               onClick={currentUser ? openAccount : openAuth}
-              className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+              className="p-1.5 sm:p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
               title={currentUser ? `Account: ${currentUser.name}` : "Sign In with Mobile OTP"}
             >
-              <User className="w-5 h-5 text-[#18382D]" />
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#18382D]" />
               {currentUser && (
                 <span className="hidden xl:inline text-xs font-semibold text-[#18382D] max-w-[80px] truncate">
                   {currentUser.name?.split(" ")[0]}
@@ -177,11 +181,11 @@ export default function Navbar({
             {/* Shopping Bag */}
             <button
               onClick={openCart}
-              className="p-2 sm:px-3 sm:py-2 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-full transition-all cursor-pointer flex items-center gap-2 shadow-xs"
+              className="p-1.5 sm:px-3 sm:py-2 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-full transition-all cursor-pointer flex items-center gap-1 sm:gap-2 shadow-xs"
               title="View Shopping Bag"
             >
               <ShoppingBag className="w-4 h-4 text-[#B88D4E]" />
-              <span className="text-xs font-semibold font-mono hidden sm:inline">
+              <span className="text-xs font-semibold font-mono">
                 {cartCount}
               </span>
             </button>
@@ -238,12 +242,12 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* 4. Full Mobile Slide-Out Drawer Navigation (Body Locked & Touch Contained) */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+      {/* 4. Full Mobile Slide-Out Drawer Navigation (Rendered in Portal outside backdrop-filter container) */}
+      {mobileMenuOpen && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] lg:hidden flex">
           {/* Dark Backdrop Overlay */}
           <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
@@ -251,10 +255,10 @@ export default function Navbar({
           {/* Slide-In Drawer */}
           <aside 
             className="relative w-[85%] max-w-sm bg-[#FFFDFA] h-full shadow-2xl z-10 flex flex-col justify-between overflow-y-auto overscroll-contain border-r border-[#E6DCCF] animate-slideInRight"
-            style={{ overscrollBehavior: "contain" }}
+            style={{ overscrollBehavior: "contain", maxHeight: "100dvh" }}
           >
             {/* Top Header inside Drawer */}
-            <div className="p-5 border-b border-[#E6DCCF] flex items-center justify-between bg-[#F7F2EA]/80">
+            <div className="p-4 sm:p-5 border-b border-[#E6DCCF] flex items-center justify-between bg-[#F7F2EA]/80 shrink-0">
               <div 
                 onClick={() => handleNavClick("all")} 
                 className="cursor-pointer"
@@ -276,7 +280,7 @@ export default function Navbar({
             </div>
 
             {/* Scrollable Drawer Body */}
-            <div className="p-5 space-y-6 flex-1">
+            <div className="p-4 sm:p-5 space-y-6 flex-1 overflow-y-auto">
               {/* Quick Customer Profile Bar if Logged in */}
               {currentUser && (
                 <div 
@@ -370,7 +374,7 @@ export default function Navbar({
             </div>
 
             {/* Bottom Footer Action inside Drawer */}
-            <div className="p-5 border-t border-[#E6DCCF] bg-[#F7F2EA]/40 space-y-3">
+            <div className="p-4 sm:p-5 border-t border-[#E6DCCF] bg-[#F7F2EA]/40 space-y-2.5 shrink-0">
               {!currentUser && (
                 <button
                   onClick={() => { openAuth(); setMobileMenuOpen(false); }}
@@ -390,7 +394,8 @@ export default function Navbar({
               </button>
             </div>
           </aside>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
