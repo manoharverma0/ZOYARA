@@ -44,6 +44,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
     return () => clearInterval(timer);
   }, [step, countdown]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // STEP 1: Send real OTP via MSG91
@@ -131,7 +140,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       onClick={onClose}
     >
       <div 
-        className="bg-[#FFFDFA] w-full max-w-md rounded-2xl shadow-2xl border border-[#E6DCCF] p-6 sm:p-8 relative overflow-hidden text-[#1B1A18]"
+        className="bg-[#FFFDFA] w-full max-w-md rounded-2xl shadow-2xl border border-[#E6DCCF] p-5 sm:p-8 relative overflow-y-auto max-h-[92dvh] text-[#1B1A18] overscroll-contain"
+        style={{ overscrollBehavior: "contain" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

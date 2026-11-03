@@ -22,7 +22,12 @@ import {
   Camera,
   ChevronRight
 } from "lucide-react";
-import { saveStoreSettings } from "../../services/storage";
+import { 
+  saveStoreSettings, 
+  testSupabaseConnection, 
+  pushAllProductsToSupabase, 
+  getProducts 
+} from "../../services/storage";
 import { applyDynamicSeo } from "../../utils/seo";
 import { DEFAULT_CATEGORY_TILES } from "../../data/initialProducts";
 
@@ -37,6 +42,9 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
   const [activeTab, setActiveTab] = useState("landing"); // 'landing' | 'security' | 'seo' | 'general' | 'razorpay' | 'custom_html'
   const [showPassword, setShowPassword] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [cloudSyncFeedback, setCloudSyncFeedback] = useState(null);
+  const [isTestingCloud, setIsTestingCloud] = useState(false);
+  const [isPushingCloud, setIsPushingCloud] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -809,6 +817,65 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
                 </div>
               </div>
 
+              {/* Action Buttons: Test Connection & Push All Local Products */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isTestingCloud}
+                    onClick={async () => {
+                      setIsTestingCloud(true);
+                      setCloudSyncFeedback(null);
+                      const res = await testSupabaseConnection(formData.supabaseUrl, formData.supabaseAnonKey);
+                      setIsTestingCloud(false);
+                      if (res.success) {
+                        setCloudSyncFeedback({ type: "success", text: `Supabase database is connected and online! (${res.count} existing records found).` });
+                      } else {
+                        setCloudSyncFeedback({ type: "error", text: `Connection check failed: ${res.error}` });
+                      }
+                    }}
+                    className="px-4 py-2 bg-white hover:bg-[#FAF8F5] text-[#18382D] border border-[#DFD5C6] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    <Database className="w-3.5 h-3.5 text-[#B88D4E]" />
+                    <span>{isTestingCloud ? "Testing Connection..." : "Test Connection"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isPushingCloud}
+                    onClick={async () => {
+                      setIsPushingCloud(true);
+                      setCloudSyncFeedback(null);
+                      const prods = getProducts();
+                      const res = await pushAllProductsToSupabase(prods);
+                      setIsPushingCloud(false);
+                      if (res.success) {
+                        setCloudSyncFeedback({ type: "success", text: `Successfully pushed ${res.count} products to Supabase! Mobile devices will now load live products.` });
+                        if (onRefreshData) onRefreshData();
+                      } else {
+                        setCloudSyncFeedback({ type: "error", text: `Upload failed: ${res.error}` });
+                      }
+                    }}
+                    className="px-5 py-2 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-colors disabled:opacity-50"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#B88D4E]" />
+                    <span>{isPushingCloud ? "Pushing to Cloud..." : "Push All Products to Cloud"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Feedback Alert */}
+              {cloudSyncFeedback && (
+                <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  cloudSyncFeedback.type === "success" 
+                    ? "bg-emerald-50 border border-emerald-300 text-emerald-800" 
+                    : "bg-red-50 border border-red-300 text-red-800"
+                }`}>
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{cloudSyncFeedback.text}</span>
+                </div>
+              )}
+
               {/* Instructions */}
               <div className="p-3 bg-[#F7F2EA] rounded-xl text-[11px] text-[#746B62] space-y-1">
                 <div className="font-semibold text-[#18382D] flex items-center gap-1">
@@ -817,7 +884,7 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
                 <ol className="list-decimal pl-4 space-y-0.5">
                   <li>Create a free account at <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-[#18382D] underline font-medium inline-flex items-center gap-0.5">supabase.com <ExternalLink className="w-2.5 h-2.5" /></a></li>
                   <li>Copy and execute the pre-written script <code className="bg-white px-1 py-0.5 rounded border border-[#DFD5C6] font-mono text-[10px]">supabase_schema.sql</code> in the Supabase SQL Editor.</li>
-                  <li>Paste your Project URL &amp; Anon Key above and click <strong>Save Settings</strong>.</li>
+                  <li>Paste your Project URL &amp; Anon Key above, click <strong>Test Connection</strong>, then click <strong>Push All Products to Cloud</strong>.</li>
                 </ol>
               </div>
             </div>

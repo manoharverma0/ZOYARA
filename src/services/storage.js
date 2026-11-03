@@ -3,8 +3,21 @@ import {
   syncProductToSupabase, 
   deleteProductFromSupabase, 
   syncOrderToSupabase, 
-  fetchLiveProducts 
+  fetchLiveProducts,
+  pushAllProductsToSupabase,
+  testSupabaseConnection,
+  getSupabaseCredentials
 } from "./supabase";
+
+export { 
+  syncProductToSupabase, 
+  deleteProductFromSupabase, 
+  syncOrderToSupabase, 
+  fetchLiveProducts,
+  pushAllProductsToSupabase,
+  testSupabaseConnection,
+  getSupabaseCredentials 
+};
 
 const STORAGE_KEYS = {
   PRODUCTS: "zayara_products_v2", // Upgraded version for curated categories (Bras, Underwear, Jewellery)
@@ -81,23 +94,27 @@ export function getProducts() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+      if (INITIAL_PRODUCTS && INITIAL_PRODUCTS.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+        return INITIAL_PRODUCTS;
+      }
       return [];
     }
     const parsed = JSON.parse(raw);
-    // Filter out any legacy hardcoded demo products (zy-jwl-, zy-bra-, zy-und-)
-    const valid = Array.isArray(parsed) 
-      ? parsed.filter(p => p && p.id && p.title && typeof p.price === "number" && !p.id.startsWith("zy-jwl-") && !p.id.startsWith("zy-bra-") && !p.id.startsWith("zy-und-")) 
-      : [];
-    
-    // Automatically wipe demo products from localStorage if present
-    if (Array.isArray(parsed) && parsed.length !== valid.length) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(valid));
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      // Validate that items are valid product objects
+      const valid = parsed.filter(p => p && p.id && p.title && typeof p.price === "number");
+      if (valid.length > 0) return valid;
     }
-    return valid;
+    // If parsed was empty array, seed with initial catalog
+    if (INITIAL_PRODUCTS && INITIAL_PRODUCTS.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+      return INITIAL_PRODUCTS;
+    }
+    return [];
   } catch (e) {
     console.error("Error reading products:", e);
-    return [];
+    return INITIAL_PRODUCTS || [];
   }
 }
 

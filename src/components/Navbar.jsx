@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   ShoppingBag, 
   Sparkles, 
@@ -9,7 +9,8 @@ import {
   User, 
   Menu, 
   X,
-  Gem
+  Gem,
+  ChevronRight
 } from "lucide-react";
 
 export default function Navbar({ 
@@ -27,6 +28,17 @@ export default function Navbar({
   onRequestStaffPortal
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Prevent background scrolling when mobile menu drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [mobileMenuOpen]);
 
   const categories = [
     { id: "all", label: "All Pieces" },
@@ -226,72 +238,158 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* 4. Mobile Drawer Navigation */}
+      {/* 4. Full Mobile Slide-Out Drawer Navigation (Body Locked & Touch Contained) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#FFFDFA] border-b border-[#E6DCCF] shadow-lg animate-fadeIn px-4 py-6 space-y-5">
-          <div className="space-y-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#746B62] block px-2">
-              Collections
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-xs font-medium">
-              {categories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleNavClick(cat.id)}
-                  className={`p-3 text-left rounded-xl transition-all cursor-pointer ${
-                    activeCategory === cat.id
-                      ? "bg-[#18382D] text-white font-semibold"
-                      : "bg-[#F7F2EA] text-[#1B1A18] hover:bg-[#E7ECE4]"
-                  }`}
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Dark Backdrop Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Slide-In Drawer */}
+          <aside 
+            className="relative w-[85%] max-w-sm bg-[#FFFDFA] h-full shadow-2xl z-10 flex flex-col justify-between overflow-y-auto overscroll-contain border-r border-[#E6DCCF] animate-slideInRight"
+            style={{ overscrollBehavior: "contain" }}
+          >
+            {/* Top Header inside Drawer */}
+            <div className="p-5 border-b border-[#E6DCCF] flex items-center justify-between bg-[#F7F2EA]/80">
+              <div 
+                onClick={() => handleNavClick("all")} 
+                className="cursor-pointer"
+              >
+                <span className="font-serif text-2xl tracking-[0.16em] font-extrabold text-[#18382D]">
+                  ZOYARA
+                </span>
+                <span className="block text-[10px] text-[#746B62] uppercase tracking-widest -mt-0.5">
+                  Fashion &amp; Comfort
+                </span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 text-[#18382D] hover:bg-[#E7ECE4] rounded-full transition-colors cursor-pointer"
+                aria-label="Close Menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Drawer Body */}
+            <div className="p-5 space-y-6 flex-1">
+              {/* Quick Customer Profile Bar if Logged in */}
+              {currentUser && (
+                <div 
+                  onClick={() => { openAccount(); setMobileMenuOpen(false); }}
+                  className="p-3 bg-[#18382D] text-[#FFFDFA] rounded-2xl flex items-center justify-between cursor-pointer shadow-xs"
                 >
-                  {cat.label}
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#B88D4E] text-white flex items-center justify-center font-bold text-xs">
+                      {currentUser.name?.[0]?.toUpperCase() || "Z"}
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold leading-tight">{currentUser.name}</div>
+                      <div className="text-[10px] text-[#E9D9BD]">{currentUser.phone}</div>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[#B88D4E]" />
+                </div>
+              )}
+
+              {/* Collections Navigation */}
+              <div className="space-y-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#746B62] block px-1">
+                  Shop Collections
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs font-medium">
+                  {categories.map(cat => {
+                    const isSelected = activeCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleNavClick(cat.id)}
+                        className={`p-3 text-left rounded-xl transition-all cursor-pointer flex flex-col justify-between h-20 ${
+                          isSelected
+                            ? "bg-[#18382D] text-white font-semibold shadow-xs"
+                            : "bg-[#F7F2EA] text-[#1B1A18] hover:bg-[#E7ECE4]"
+                        }`}
+                      >
+                        <span className="leading-tight">{cat.label}</span>
+                        {cat.id === "antiTarnish" && (
+                          <span className={`text-[9px] uppercase tracking-wider ${isSelected ? "text-[#E9D9BD]" : "text-[#B88D4E]"}`}>
+                            18K Vacuum PVD
+                          </span>
+                        )}
+                        {cat.id === "under250" && (
+                          <span className={`text-[9px] uppercase tracking-wider ${isSelected ? "text-[#E9D9BD]" : "text-[#B88D4E]"}`}>
+                            Budget Luxury
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Secondary Navigation & Customer Services */}
+              <div className="pt-4 border-t border-[#E6DCCF] space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#746B62] block px-1">
+                  Boutique Care &amp; Services
+                </span>
+                <div className="flex flex-col space-y-1 text-xs">
+                  <button
+                    onClick={() => { openInfo("about"); setMobileMenuOpen(false); }}
+                    className="p-2.5 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-xl cursor-pointer flex items-center justify-between"
+                  >
+                    <span>About ZOYARA Atelier</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#A09383]" />
+                  </button>
+                  <button
+                    onClick={() => { openInfo("care"); setMobileMenuOpen(false); }}
+                    className="p-2.5 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-xl cursor-pointer flex items-center justify-between"
+                  >
+                    <span>Jewellery Care &amp; Anti-Tarnish Guide</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#A09383]" />
+                  </button>
+                  <button
+                    onClick={() => { openInfo("shipping"); setMobileMenuOpen(false); }}
+                    className="p-2.5 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-xl cursor-pointer flex items-center justify-between"
+                  >
+                    <span>Express Shipping &amp; Hygiene Policy</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#A09383]" />
+                  </button>
+                  <button
+                    onClick={() => { openInfo("contact"); setMobileMenuOpen(false); }}
+                    className="p-2.5 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-xl cursor-pointer flex items-center justify-between"
+                  >
+                    <span>WhatsApp Boutique Concierge</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#A09383]" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Footer Action inside Drawer */}
+            <div className="p-5 border-t border-[#E6DCCF] bg-[#F7F2EA]/40 space-y-3">
+              {!currentUser && (
+                <button
+                  onClick={() => { openAuth(); setMobileMenuOpen(false); }}
+                  className="w-full py-2.5 bg-[#18382D] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <User className="w-3.5 h-3.5 text-[#B88D4E]" />
+                  <span>Customer Login with OTP</span>
                 </button>
-              ))}
-            </div>
-          </div>
+              )}
 
-          <div className="pt-3 border-t border-[#E6DCCF] space-y-2 text-xs">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#746B62] block px-2">
-              Customer Services
-            </span>
-            <div className="flex flex-col space-y-1">
               <button
-                onClick={() => { openInfo("about"); setMobileMenuOpen(false); }}
-                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
+                onClick={() => { onRequestStaffPortal(); setMobileMenuOpen(false); }}
+                className="w-full py-2.5 bg-white text-[#746B62] hover:text-[#18382D] rounded-xl text-xs font-mono flex items-center justify-center gap-2 cursor-pointer border border-[#E6DCCF]"
               >
-                About ZOYARA Atelier
-              </button>
-              <button
-                onClick={() => { openInfo("care"); setMobileMenuOpen(false); }}
-                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
-              >
-                Jewellery Care Guide
-              </button>
-              <button
-                onClick={() => { openInfo("shipping"); setMobileMenuOpen(false); }}
-                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
-              >
-                Shipping &amp; Hygiene Return Policy
-              </button>
-              <button
-                onClick={() => { openInfo("contact"); setMobileMenuOpen(false); }}
-                className="px-2 py-2 text-left text-[#18382D] hover:bg-[#F7F2EA] rounded-lg cursor-pointer"
-              >
-                WhatsApp Boutique Desk
+                <Lock className="w-3.5 h-3.5 text-[#B88D4E]" />
+                <span>Store POS &amp; Staff Counter</span>
               </button>
             </div>
-          </div>
-
-          {/* Discreet Mobile Staff Terminal */}
-          <div className="pt-3 border-t border-[#E6DCCF]">
-            <button
-              onClick={() => { onRequestStaffPortal(); setMobileMenuOpen(false); }}
-              className="w-full py-2.5 bg-[#F7F2EA] text-[#746B62] hover:text-[#18382D] rounded-xl text-xs font-mono flex items-center justify-center gap-2 cursor-pointer border border-[#E6DCCF]"
-            >
-              <Lock className="w-3.5 h-3.5 text-[#B88D4E]" />
-              <span>Store POS &amp; Staff Counter</span>
-            </button>
-          </div>
+          </aside>
         </div>
       )}
     </header>

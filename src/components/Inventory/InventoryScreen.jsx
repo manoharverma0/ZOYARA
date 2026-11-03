@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   Package, 
   Plus, 
@@ -17,7 +17,13 @@ import {
   RefreshCw, 
   CheckCircle2,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Database,
+  Cloud,
+  ExternalLink,
+  ShieldCheck,
+  Loader2,
+  Share2
 } from "lucide-react";
 import { formatCurrency, generateRandomBarcode } from "../../utils/barcode";
 import { 
@@ -28,7 +34,10 @@ import {
   exportDatabaseBackup, 
   importDatabaseBackup,
   saveStoreSettings,
-  resetAllDataToDefault
+  resetAllDataToDefault,
+  pushAllProductsToSupabase,
+  testSupabaseConnection,
+  getSupabaseCredentials
 } from "../../services/storage";
 import POSReceiptModal from "../POS/POSReceiptModal";
 import AdminSecurityOtpModal from "../Common/AdminSecurityOtpModal";
@@ -49,6 +58,21 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
   // Add/Edit Product Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+
+  // Prevent background scroll when Add/Edit Product modal is open
+  useEffect(() => {
+    if (isAddModalOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [isAddModalOpen]);
+
+  // Cloud Database Sync & Test State
+  const [cloudSyncStatus, setCloudSyncStatus] = useState(null);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const [isTestingDb, setIsTestingDb] = useState(false);
+
   const [productForm, setProductForm] = useState({
     title: "",
     sku: "",
@@ -65,7 +89,11 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
   });
 
   // Settings form state
-  const [storeSettingsForm, setStoreSettingsForm] = useState({ ...settings });
+  const [storeSettingsForm, setStoreSettingsForm] = useState({ 
+    supabaseUrl: "",
+    supabaseAnonKey: "",
+    ...settings 
+  });
   const [settingsSavedNotice, setSettingsSavedNotice] = useState(false);
 
   // Sales History & Receipt reprint state
@@ -223,6 +251,45 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
     onRefreshData();
   };
 
+  // Test live connection to Supabase
+  const handleTestSupabase = async () => {
+    setIsTestingDb(true);
+    setCloudSyncStatus(null);
+    const res = await testSupabaseConnection(storeSettingsForm.supabaseUrl, storeSettingsForm.supabaseAnonKey);
+    setIsTestingDb(false);
+    if (res.success) {
+      setCloudSyncStatus({
+        type: "success",
+        message: `Database connected successfully! Live products table reachable (${res.count} existing products in cloud).`
+      });
+    } else {
+      setCloudSyncStatus({
+        type: "error",
+        message: `Connection failed: ${res.error}`
+      });
+    }
+  };
+
+  // Push all existing local products to Supabase cloud
+  const handlePushAllToCloud = async () => {
+    setIsCloudSyncing(true);
+    setCloudSyncStatus(null);
+    const res = await pushAllProductsToSupabase(products);
+    setIsCloudSyncing(false);
+    if (res.success) {
+      setCloudSyncStatus({
+        type: "success",
+        message: `Successfully synchronized ${res.count} products to your Supabase Cloud Database! Mobile devices will now display all products in real time.`
+      });
+      onRefreshData();
+    } else {
+      setCloudSyncStatus({
+        type: "error",
+        message: `Cloud sync failed: ${res.error}`
+      });
+    }
+  };
+
   // File Import for Backup
   const handleFileImport = (e) => {
     const file = e.target.files[0];
@@ -309,13 +376,13 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
           </div>
         </div>
 
-        {/* Navigation Tabs (Catalog vs Sales Ledger vs Store Settings) */}
-        <div className="flex items-center justify-between border-b border-[#DFD5C6] pb-2">
-          <div className="flex items-center gap-2">
+        {/* Navigation Tabs (Catalog vs Sales Ledger vs Store Settings) - Fully Mobile Responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#DFD5C6] pb-3 gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
             {[
-              { id: "catalog", label: "Product Catalog & Stock", icon: Package },
-              { id: "sales", label: "Daily Sales History", icon: Receipt },
-              { id: "settings", label: "Shop Settings & Backups", icon: Store }
+              { id: "catalog", label: "Catalog & Stock", fullLabel: "Product Catalog & Stock", icon: Package },
+              { id: "sales", label: "Sales Ledger", fullLabel: "Daily Sales History", icon: Receipt },
+              { id: "settings", label: "Settings & Cloud", fullLabel: "Shop Settings & Cloud", icon: Store }
             ].map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -323,14 +390,15 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     isActive
                       ? "bg-[#18181B] text-[#FAF8F5] shadow-xs"
                       : "bg-white text-[#6E6152] hover:bg-[#EFE9DF] border border-[#DFD5C6]"
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#D4AF37]" : ""}`} />
-                  <span>{tab.label}</span>
+                  <span className="sm:hidden">{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.fullLabel}</span>
                 </button>
               );
             })}
@@ -339,7 +407,7 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
           {activeTab === "catalog" && (
             <button
               onClick={handleOpenAddModal}
-              className="px-4 py-2 bg-[#18181B] hover:bg-[#2B2B30] text-[#FAF8F5] rounded-xl text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="w-full sm:w-auto justify-center px-4 py-2.5 bg-[#18181B] hover:bg-[#2B2B30] text-[#FAF8F5] rounded-xl text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4 text-[#D4AF37]" />
               <span>Add New Product</span>
@@ -574,7 +642,132 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
 
         {/* TAB 3: STORE SETTINGS & DATA SAFETY BACKUPS */}
         {activeTab === "settings" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            
+            {/* Supabase Live Cloud Database Card & Multi-Device Sync */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#DFD5C6] shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#E8E2D8] gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-[#18382D]/10 flex items-center justify-center text-[#18382D]">
+                    <Database className="w-5 h-5 text-[#B88D4E]" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg text-[#18181B] font-semibold">
+                      Supabase Cloud Database &amp; Multi-Device Sync
+                    </h3>
+                    <p className="text-xs text-[#8C7E6C]">
+                      Sync product catalog, prices, and online orders across Desktop and Mobile devices in real time.
+                    </p>
+                  </div>
+                </div>
+
+                {storeSettingsForm.supabaseUrl && storeSettingsForm.supabaseAnonKey ? (
+                  <span className="self-start sm:self-auto px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+                    <span>Live Cloud Configured</span>
+                  </span>
+                ) : (
+                  <span className="self-start sm:self-auto px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Local Device Only (Offline)</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Status explanation */}
+              <div className="p-3.5 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-xs text-[#6E6152] leading-relaxed">
+                {storeSettingsForm.supabaseUrl && storeSettingsForm.supabaseAnonKey ? (
+                  <p>
+                    Your store is configured to sync with Supabase cloud. Products you add or edit on this desktop browser will automatically sync to your mobile devices once pushed.
+                  </p>
+                ) : (
+                  <p className="text-amber-800">
+                    <strong>Why products were not updating on mobile:</strong> Products added locally without Supabase are saved in this computer's browser storage only. Enter your Supabase Project URL and Anon Key below, then click <strong>"Push All Current Products to Cloud"</strong> so mobile phones immediately load the live catalog!
+                  </p>
+                )}
+              </div>
+
+              {/* Cloud Sync Feedback Banner */}
+              {cloudSyncStatus && (
+                <div className={`p-3.5 rounded-xl text-xs flex items-center gap-2.5 ${
+                  cloudSyncStatus.type === "success" 
+                    ? "bg-emerald-50 border border-emerald-300 text-emerald-800" 
+                    : "bg-red-50 border border-red-300 text-red-800"
+                }`}>
+                  {cloudSyncStatus.type === "success" ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                  )}
+                  <span>{cloudSyncStatus.message}</span>
+                </div>
+              )}
+
+              {/* Credentials Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block text-[#6E6152] font-semibold mb-1">
+                    Supabase Project URL:
+                  </label>
+                  <input
+                    type="url"
+                    value={storeSettingsForm.supabaseUrl || ""}
+                    onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, supabaseUrl: e.target.value })}
+                    placeholder="https://xyzcompany.supabase.co"
+                    className="w-full p-2.5 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl font-mono text-xs focus:outline-none focus:border-[#18181B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#6E6152] font-semibold mb-1">
+                    Supabase Anon / Public API Key:
+                  </label>
+                  <input
+                    type="password"
+                    value={storeSettingsForm.supabaseAnonKey || ""}
+                    onChange={(e) => setStoreSettingsForm({ ...storeSettingsForm, supabaseAnonKey: e.target.value })}
+                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    className="w-full p-2.5 bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl font-mono text-xs focus:outline-none focus:border-[#18181B]"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons: Test Connection & Push to Cloud */}
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTestSupabase}
+                    disabled={isTestingDb}
+                    className="px-4 py-2 bg-white hover:bg-[#FAF8F5] text-[#18181B] border border-[#DFD5C6] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    {isTestingDb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5 text-[#B88D4E]" />}
+                    <span>{isTestingDb ? "Testing Connection..." : "Test Connection"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handlePushAllToCloud}
+                    disabled={isCloudSyncing}
+                    className="px-5 py-2 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-colors disabled:opacity-50"
+                  >
+                    {isCloudSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 text-[#B88D4E]" />}
+                    <span>{isCloudSyncing ? "Pushing Products..." : `Push All Products to Cloud (${products.length})`}</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveSettings}
+                  className="px-4 py-2 bg-[#18181B] hover:bg-[#2B2B30] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Save Cloud Keys</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Store Information Form */}
             <div className="bg-white p-6 rounded-2xl border border-[#DFD5C6] shadow-xs">
@@ -746,127 +939,140 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       </div>
 
-      {/* Add / Edit Product Modal */}
+      {/* Add / Edit Product Modal - Mobile First & Scroll Contained */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-[#FAF8F5] w-full max-w-lg rounded-2xl border border-[#DFD5C6] shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overscroll-contain">
+          <div 
+            className="bg-[#FAF8F5] w-full max-w-lg rounded-2xl border border-[#DFD5C6] shadow-2xl p-4 sm:p-6 overflow-y-auto max-h-[92dvh] overscroll-contain"
+            style={{ overscrollBehavior: "contain" }}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] mb-4">
-              <h3 className="font-serif text-xl text-[#18181B] font-normal">
-                {editingProduct ? "Edit Product" : "Add New Creation"}
-              </h3>
+              <div>
+                <h3 className="font-serif text-lg sm:text-xl text-[#18181B] font-semibold">
+                  {editingProduct ? "Edit Product" : "Add New Creation"}
+                </h3>
+                <span className="text-[11px] text-[#8C7E6C]">
+                  Configure SKU, pricing, stock count, and high-res photo.
+                </span>
+              </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1 text-[#7A6D5E] hover:text-black cursor-pointer"
+                className="p-1.5 text-[#7A6D5E] hover:text-black rounded-lg hover:bg-[#EFE9DF] cursor-pointer"
+                aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveProduct} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[#6E6152] font-medium mb-1">Product Title:</label>
+                <label className="block text-[#6E6152] font-semibold mb-1">Product Title *</label>
                 <input
                   type="text"
                   required
                   value={productForm.title}
                   onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
-                  className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg"
+                  className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl text-xs focus:outline-none focus:border-[#18181B]"
                   placeholder="e.g. Luna Pearl Huggies"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">SKU Code:</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">SKU Code *</label>
                   <input
                     type="text"
                     required
                     value={productForm.sku}
                     onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg font-mono uppercase"
-                    placeholder="e.g. ZY-JWL-10"
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl font-mono uppercase text-xs focus:outline-none focus:border-[#18181B]"
+                    placeholder="e.g. ZY-101001"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">Barcode (EAN/Code-128):</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">Barcode (EAN/Code-128)</label>
                   <input
                     type="text"
                     value={productForm.barcode}
                     onChange={(e) => setProductForm({ ...productForm, barcode: e.target.value })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg font-mono"
-                    placeholder="8901001..."
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl font-mono text-xs focus:outline-none focus:border-[#18181B]"
+                    placeholder="101001"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">Category:</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">Category *</label>
                   <select
                     value={productForm.category}
                     onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg cursor-pointer"
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl cursor-pointer text-xs focus:outline-none focus:border-[#18181B]"
                   >
                     <option value="Jewellery">💎 Fine Jewellery</option>
-                    <option value="Bras">👙 Bras & Bralettes</option>
+                    <option value="Bras">👙 Bras &amp; Bralettes</option>
                     <option value="Underwear">🌸 Girls Underwear / Panties</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">Sub-Category:</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">Sub-Category</label>
                   <input
                     type="text"
                     value={productForm.subCategory}
                     onChange={(e) => setProductForm({ ...productForm, subCategory: e.target.value })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg"
-                    placeholder="e.g. Rings, Bralettes"
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl text-xs focus:outline-none focus:border-[#18181B]"
+                    placeholder="e.g. Earrings, Rings, Bralettes"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              {/* Pricing & Stock: Stacked cleanly on mobile so inputs don't squash */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">Cost Price (₹):</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">Cost Price (₹)</label>
                   <input
                     type="number"
                     min="0"
                     value={productForm.costPrice}
                     onChange={(e) => setProductForm({ ...productForm, costPrice: Number(e.target.value) })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg font-mono"
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl font-mono text-xs focus:outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">Retail Price (₹):</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">Selling Price (₹) *</label>
                   <input
                     type="number"
                     min="1"
+                    required
                     value={productForm.price}
                     onChange={(e) => setProductForm({ ...productForm, price: Number(e.target.value) })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg font-mono font-bold"
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl font-mono font-bold text-xs text-[#18181B] focus:outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[#6E6152] font-medium mb-1">Stock Count:</label>
+                  <label className="block text-[#6E6152] font-semibold mb-1">Stock Count *</label>
                   <input
                     type="number"
                     min="0"
+                    required
                     value={productForm.stock}
                     onChange={(e) => setProductForm({ ...productForm, stock: Number(e.target.value) })}
-                    className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg font-mono font-bold"
+                    className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl font-mono font-bold text-xs focus:outline-none focus:border-[#18181B]"
                   />
                 </div>
               </div>
 
-              {/* Product Photo: Upload File or URL + Live Preview */}
+              {/* Product Photo: Mobile wrap with preview */}
               <div>
-                <label className="block text-[#6E6152] font-medium mb-1">Product Photo / Image:</label>
-                <div className="flex items-center gap-3 p-2.5 bg-white border border-[#DFD5C6] rounded-xl">
+                <label className="block text-[#6E6152] font-semibold mb-1">Product Photo / Image</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-white border border-[#DFD5C6] rounded-xl">
                   {/* Thumbnail Preview */}
-                  <div className="w-16 h-16 rounded-lg bg-[#F7F2EA] border border-[#E6DCCF] overflow-hidden shrink-0 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-xl bg-[#F7F2EA] border border-[#E6DCCF] overflow-hidden shrink-0 flex items-center justify-center mx-auto sm:mx-0">
                     {productForm.image ? (
                       <img
                         src={productForm.image}
@@ -880,10 +1086,10 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
                   </div>
 
                   {/* Actions: Upload from File / Camera OR Paste URL */}
-                  <div className="flex-1 space-y-1.5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <label className="px-2.5 py-1.5 bg-[#18181B] hover:bg-[#2B2B30] text-white rounded-lg text-[10px] font-semibold cursor-pointer flex items-center gap-1.5 transition-colors">
-                        <Camera className="w-3 h-3 text-[#D4AF37]" />
+                  <div className="flex-1 space-y-2 min-w-0 w-full">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="px-3 py-1.5 bg-[#18181B] hover:bg-[#2B2B30] text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors">
+                        <Camera className="w-3.5 h-3.5 text-[#D4AF37]" />
                         <span>Upload Photo / Camera</span>
                         <input
                           type="file"
@@ -892,14 +1098,14 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
                           className="hidden"
                         />
                       </label>
-                      <span className="text-[10px] text-[#A09383]">Auto-compressed</span>
+                      <span className="text-[10px] text-[#A09383]">Auto-compressed to web quality</span>
                     </div>
 
                     <input
                       type="url"
                       value={productForm.image}
                       onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                      className="w-full p-1.5 bg-[#FAF8F5] border border-[#DFD5C6] rounded text-[10px] text-[#4A4036] truncate"
+                      className="w-full p-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-lg text-xs text-[#4A4036] truncate focus:outline-none focus:border-[#18181B]"
                       placeholder="Or paste web image URL (https://...)"
                     />
                   </div>
@@ -907,27 +1113,28 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
               </div>
 
               <div>
-                <label className="block text-[#6E6152] font-medium mb-1">Description & Material:</label>
+                <label className="block text-[#6E6152] font-semibold mb-1">Description &amp; Material</label>
                 <textarea
                   rows="2"
                   value={productForm.description}
                   onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                  className="w-full p-2 bg-white border border-[#DFD5C6] rounded-lg"
-                  placeholder="Anti-tarnish, featherlight alloy..."
+                  className="w-full p-2.5 bg-white border border-[#DFD5C6] rounded-xl text-xs focus:outline-none focus:border-[#18181B]"
+                  placeholder="Anti-tarnish, hypoallergenic 18K gold polish..."
                 ></textarea>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              {/* Action Buttons: Stacked on small mobile */}
+              <div className="pt-3 flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-[#E8E2D8]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-white border border-[#DFD5C6] rounded-xl text-[#6E6152] cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-[#FAF8F5] border border-[#DFD5C6] rounded-xl text-[#6E6152] text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#18181B] text-white rounded-xl font-semibold cursor-pointer hover:bg-[#2B2B30]"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#18181B] hover:bg-[#2B2B30] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm transition-colors"
                 >
                   {editingProduct ? "Save Changes" : "Create Product"}
                 </button>

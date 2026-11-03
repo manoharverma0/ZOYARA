@@ -160,6 +160,78 @@ export async function deleteProductFromSupabase(productId) {
   }
 }
 
+// Push all local products in bulk to Supabase
+export async function pushAllProductsToSupabase(products) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { success: false, error: "Supabase cloud database is not configured. Please set your Supabase URL & Anon Key." };
+  if (!Array.isArray(products) || products.length === 0) {
+    return { success: false, error: "No products available to upload." };
+  }
+
+  try {
+    const payload = products.map(product => ({
+      id: product.id,
+      sku: product.sku,
+      barcode: product.barcode,
+      title: product.title,
+      category: product.category,
+      sub_category: product.subCategory || product.category,
+      price: Number(product.price),
+      cost_price: Number(product.costPrice || 0),
+      stock: Number(product.stock || 0),
+      image: product.image,
+      description: product.description || "",
+      material: product.material || "",
+      badge: product.badge || "",
+      rating: Number(product.rating || 5.0),
+      reviews_count: Number(product.reviewsCount || 0),
+      sizes: product.sizes || ["Standard"],
+      updated_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+      .from("products")
+      .upsert(payload, { onConflict: "id" });
+
+    if (error) {
+      console.error("[ZOYARA Supabase] Bulk upload error:", error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true, count: payload.length };
+  } catch (err) {
+    console.error("[ZOYARA Supabase] Bulk upload failed:", err);
+    return { success: false, error: err.message || "Bulk upload failed." };
+  }
+}
+
+// Test live connectivity to Supabase
+export async function testSupabaseConnection(overrideUrl, overrideKey) {
+  try {
+    const creds = getSupabaseCredentials();
+    const url = (overrideUrl || creds.supabaseUrl || "").trim();
+    const key = (overrideKey || creds.supabaseAnonKey || "").trim();
+
+    if (!url || !key) {
+      return { success: false, error: "Supabase URL and Anon Key are required." };
+    }
+
+    if (!url.startsWith("https://") || url.includes("your-project") || url.includes("pozjbjhrwtuihiqqjyxr")) {
+      return { success: false, error: "Please enter a valid, active Supabase project URL." };
+    }
+
+    const testClient = createClient(url, key);
+    const { data, error } = await testClient.from("products").select("id").limit(1);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, count: data ? data.length : 0 };
+  } catch (err) {
+    return { success: false, error: err.message || "Network error reaching Supabase." };
+  }
+}
+
 /**
  * ==========================================
  * LIVE ONLINE ORDERS (SUPABASE CRUD)
