@@ -87,7 +87,7 @@ export default function CheckoutModal({
     const razorpayKey = (
       (typeof import.meta !== "undefined" && import.meta.env?.VITE_RAZORPAY_KEY_ID) || 
       currentSettings.razorpayKeyId || 
-      "rzp_test_TvPbH3s2mTOTXN"
+      "rzp_live_TvZx817mfaHPhW"
     ).trim();
 
     const options = {
