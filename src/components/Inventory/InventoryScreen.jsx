@@ -20,10 +20,7 @@ import {
   Image as ImageIcon,
   Database,
   Cloud,
-  ExternalLink,
-  ShieldCheck,
-  Loader2,
-  Share2
+  Loader2
 } from "lucide-react";
 import { formatCurrency, generateRandomBarcode } from "../../utils/barcode";
 import { 
@@ -36,8 +33,7 @@ import {
   saveStoreSettings,
   resetAllDataToDefault,
   pushAllProductsToSupabase,
-  testSupabaseConnection,
-  getSupabaseCredentials
+  testSupabaseConnection
 } from "../../services/storage";
 import POSReceiptModal from "../POS/POSReceiptModal";
 import AdminSecurityOtpModal from "../Common/AdminSecurityOtpModal";

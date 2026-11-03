@@ -462,12 +462,16 @@ export default function Storefront({
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     />
 
-                    {/* Badge */}
-                    {product.badge && (
+                    {/* Out of Stock or Custom Badge */}
+                    {(product.stock ?? 0) <= 0 ? (
+                      <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 bg-[#3B3A36] text-[#FFFDFA] text-[9px] font-semibold tracking-wider uppercase rounded-full shadow-2xs font-mono">
+                        Sold Out
+                      </span>
+                    ) : product.badge ? (
                       <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 bg-[#18382D] text-[#B88D4E] text-[9px] font-semibold tracking-wider uppercase rounded-full shadow-2xs">
                         {product.badge}
                       </span>
-                    )}
+                    ) : null}
 
                     {/* Wishlist Heart Button */}
                     <button
@@ -486,11 +490,12 @@ export default function Storefront({
                     <div className="absolute inset-x-2 bottom-2 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <button
                         type="button"
+                        disabled={(product.stock ?? 0) <= 0}
                         onClick={(e) => handleAddToCartWithAudio(product, e)}
-                        className="w-full py-2 bg-[#18382D]/95 hover:bg-[#18382D] text-white rounded-xl text-[11px] font-semibold tracking-wider uppercase backdrop-blur-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className="w-full py-2 bg-[#18382D]/95 hover:bg-[#18382D] text-white rounded-xl text-[11px] font-semibold tracking-wider uppercase backdrop-blur-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:bg-gray-700 disabled:cursor-not-allowed"
                       >
                         <ShoppingBag className="w-3.5 h-3.5 text-[#B88D4E]" />
-                        <span>Quick Add</span>
+                        <span>{(product.stock ?? 0) <= 0 ? "Out of Stock" : "Quick Add"}</span>
                       </button>
                     </div>
                   </div>
@@ -536,8 +541,10 @@ export default function Storefront({
                       {/* Mobile Quick Add Button */}
                       <button
                         type="button"
+                        disabled={(product.stock ?? 0) <= 0}
                         onClick={(e) => handleAddToCartWithAudio(product, e)}
-                        className="sm:hidden p-1.5 rounded-lg bg-[#18382D] text-white hover:bg-[#234E3F] transition-colors cursor-pointer"
+                        className="sm:hidden p-1.5 rounded-lg bg-[#18382D] text-white hover:bg-[#234E3F] transition-colors cursor-pointer disabled:opacity-40 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        title={(product.stock ?? 0) <= 0 ? "Out of Stock" : "Quick Add"}
                       >
                         <ShoppingBag className="w-3.5 h-3.5 text-[#B88D4E]" />
                       </button>

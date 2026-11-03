@@ -167,9 +167,15 @@ export default function ProductDetailModal({
                   <span className="font-semibold text-[#18382D] uppercase tracking-wider text-[11px]">
                     Select Size: <strong className="font-mono text-[#B88D4E]">{selectedSize}</strong>
                   </span>
-                  <span className="text-[#746B62] text-[11px] font-mono">
-                    Stock: {product.stock || 25} available
-                  </span>
+                  {(product.stock ?? 0) <= 0 ? (
+                    <span className="text-red-700 text-[11px] font-semibold bg-red-50 px-2 py-0.5 rounded font-mono">
+                      Out of Stock
+                    </span>
+                  ) : (
+                    <span className="text-[#746B62] text-[11px] font-mono">
+                      Stock: {product.stock} available
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map(size => (
@@ -196,16 +202,18 @@ export default function ProductDetailModal({
               <div className="flex items-center border border-[#E6DCCF] rounded-lg bg-white overflow-hidden text-xs">
                 <button
                   type="button"
+                  disabled={(product.stock ?? 0) <= 0}
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-2.5 py-1 text-[#746B62] hover:bg-[#F7F2EA] cursor-pointer"
+                  className="px-2.5 py-1 text-[#746B62] hover:bg-[#F7F2EA] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   -
                 </button>
                 <span className="px-3 py-1 font-mono font-semibold text-[#18382D]">{quantity}</span>
                 <button
                   type="button"
+                  disabled={(product.stock ?? 0) <= 0 || quantity >= (product.stock ?? 1)}
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-2.5 py-1 text-[#746B62] hover:bg-[#F7F2EA] cursor-pointer"
+                  className="px-2.5 py-1 text-[#746B62] hover:bg-[#F7F2EA] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
@@ -216,20 +224,28 @@ export default function ProductDetailModal({
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
+                disabled={(product.stock ?? 0) <= 0}
                 onClick={handleAdd}
-                className="py-3 px-4 bg-[#FFFDFA] hover:bg-[#F7F2EA] text-[#18382D] border-2 border-[#18382D] rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="py-3 px-4 bg-[#FFFDFA] hover:bg-[#F7F2EA] text-[#18382D] border-2 border-[#18382D] rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed"
               >
                 <ShoppingBag className="w-4 h-4 text-[#B88D4E]" />
-                <span>{isInCart ? "Added in Bag (+1)" : "Add to Bag"}</span>
+                <span>
+                  {(product.stock ?? 0) <= 0
+                    ? "Out of Stock"
+                    : isInCart
+                    ? "Added in Bag (+1)"
+                    : "Add to Bag"}
+                </span>
               </button>
 
               <button
                 type="button"
+                disabled={(product.stock ?? 0) <= 0}
                 onClick={handleInstantBuy}
-                className="py-3 px-4 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                className="py-3 px-4 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 <Sparkles className="w-4 h-4 text-[#B88D4E]" />
-                <span>Buy Now (1-Click)</span>
+                <span>{(product.stock ?? 0) <= 0 ? "Restocking Soon" : "Buy Now (1-Click)"}</span>
               </button>
             </div>
 

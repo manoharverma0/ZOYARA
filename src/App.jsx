@@ -102,13 +102,31 @@ export default function App() {
     });
   };
 
-  // Sync with live Supabase database on mount
+  // Sync with live Supabase database on mount and on window focus / tab switch
   useEffect(() => {
-    syncWithSupabase().then(liveProds => {
-      if (liveProds && liveProds.length > 0) {
-        setProducts(liveProds);
+    const handleSync = () => {
+      syncWithSupabase().then(liveProds => {
+        if (liveProds && liveProds.length > 0) {
+          setProducts(liveProds);
+        }
+      });
+    };
+
+    handleSync();
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handleSync();
       }
-    });
+    };
+
+    window.addEventListener("focus", handleSync);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", handleSync);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   // Apply dynamic SEO on mount and when settings change

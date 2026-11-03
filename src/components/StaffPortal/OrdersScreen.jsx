@@ -13,7 +13,6 @@ import {
   CreditCard, 
   ChevronDown, 
   Send,
-  AlertCircle,
   Copy,
   Check,
   RefreshCw,
@@ -30,7 +29,7 @@ import { formatCurrency } from "../../utils/barcode";
 import InvoiceModal from "../Common/InvoiceModal";
 import AdminSecurityOtpModal from "../Common/AdminSecurityOtpModal";
 
-export default function OrdersScreen({ settings, products = [], onRefreshData }) {
+export default function OrdersScreen({ settings, _products = [], onRefreshData }) {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // 'all' | 'Processing' | 'Packed' | 'Dispatched' | 'Delivered'
@@ -49,10 +48,6 @@ export default function OrdersScreen({ settings, products = [], onRefreshData })
   // Editable tracking info per order
   const [trackingForms, setTrackingForms] = useState({});
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
   const loadOrders = () => {
     const data = getOnlineOrders();
     setOrders(data);
@@ -67,6 +62,10 @@ export default function OrdersScreen({ settings, products = [], onRefreshData })
     });
     setTrackingForms(initialForms);
   };
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
   const handleStatusChange = (orderId, newStatus) => {
     const currentForm = trackingForms[orderId] || {};

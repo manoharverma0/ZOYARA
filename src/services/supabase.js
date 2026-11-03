@@ -71,8 +71,11 @@ export async function fetchLiveProducts() {
 
     if (!data || data.length === 0) return null;
 
+    // Filter out soft-deleted / archived items
+    const activeRows = data.filter(row => row.is_active !== false && !row.deleted_at);
+
     // Map database snake_case columns back to camelCase application model
-    return data.map(row => ({
+    return activeRows.map(row => ({
       id: row.id,
       sku: row.sku,
       barcode: row.barcode,
@@ -120,6 +123,8 @@ export async function syncProductToSupabase(product) {
       rating: Number(product.rating || 5.0),
       reviews_count: Number(product.reviewsCount || 0),
       sizes: product.sizes || ["Standard"],
+      is_active: true,
+      deleted_at: null,
       updated_at: new Date().toISOString()
     };
 
@@ -138,7 +143,7 @@ export async function syncProductToSupabase(product) {
   }
 }
 
-// Delete a product from Supabase
+// Soft-delete a product in Supabase
 export async function deleteProductFromSupabase(productId) {
   const supabase = getSupabaseClient();
   if (!supabase) return false;
@@ -146,12 +151,16 @@ export async function deleteProductFromSupabase(productId) {
   try {
     const { error } = await supabase
       .from("products")
-      .delete()
+      .update({
+        is_active: false,
+        deleted_at: new Date().toISOString()
+      })
       .eq("id", productId);
 
     if (error) {
-      console.error("[ZOYARA Supabase] Error deleting product:", error.message);
-      return false;
+      console.warn("[ZOYARA Supabase] Soft delete update notice:", error.message);
+      const { error: hardErr } = await supabase.from("products").delete().eq("id", productId);
+      return !hardErr;
     }
     return true;
   } catch (err) {

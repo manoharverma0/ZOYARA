@@ -13,7 +13,8 @@
     --color-sage: #E7ECE4;
 
     --font-serif: 'Bodoni Moda', 'Cormorant Garamond', Georgia, serif;
-    --font-sans: 'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
   }
 
@@ -56,8 +57,12 @@
   font-family: 'Bodoni Moda', 'Cormorant Garamond', Georgia, serif;
 }
 
+.font-heading {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
 .font-sans {
-  font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .font-mono {
