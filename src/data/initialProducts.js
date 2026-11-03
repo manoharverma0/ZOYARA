@@ -340,9 +340,48 @@ export const INITIAL_PRODUCTS = [
   }
 ];
 
+export const DEFAULT_CATEGORY_TILES = [
+  {
+    id: "Jewellery",
+    title: "Fine Jewellery",
+    subtitle: "Earrings, Rings & Chokers",
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
+    priceTag: "From ₹179"
+  },
+  {
+    id: "Bras",
+    title: "Bras & Bralettes",
+    subtitle: "Zero Wire & Seamless",
+    image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?auto=format&fit=crop&w=600&q=80",
+    priceTag: "From ₹289"
+  },
+  {
+    id: "Underwear",
+    title: "Girls Underwear",
+    subtitle: "Pure Cotton & Laser-Cut",
+    image: "https://images.unsplash.com/photo-1582533561751-ef6f6ab93a2e?auto=format&fit=crop&w=600&q=80",
+    priceTag: "From ₹229"
+  },
+  {
+    id: "antiTarnish",
+    title: "Anti-Tarnish 18K",
+    subtitle: "Shower & Sweat Proof",
+    image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80",
+    priceTag: "18K Gold Polish"
+  },
+  {
+    id: "under250",
+    title: "Under ₹250",
+    subtitle: "Affordable Daily Luxury",
+    image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80",
+    priceTag: "Best Value"
+  }
+];
+
 export const STORE_SETTINGS = {
   name: "ZOYARA FASHION & COMFORT",
   tagline: "Fashion & Comfort",
+  categoryTiles: DEFAULT_CATEGORY_TILES,
   address: "45/1 Near Bangali Chourah, Indore, Madhya Pradesh - 452001",
   phone: "+91 74709 32714",
   whatsappNumber: "917470932714",

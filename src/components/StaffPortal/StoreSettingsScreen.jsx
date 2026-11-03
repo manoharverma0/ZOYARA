@@ -13,24 +13,105 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  LayoutTemplate,
+  Image as ImageIcon,
+  Upload,
+  RotateCcw,
+  Sparkles
 } from "lucide-react";
 import { saveStoreSettings } from "../../services/storage";
 import { applyDynamicSeo } from "../../utils/seo";
+import { DEFAULT_CATEGORY_TILES } from "../../data/initialProducts";
 
 export default function StoreSettingsScreen({ settings, onRefreshData }) {
   const [formData, setFormData] = useState({ 
     staffPin: "85200",
     supabaseUrl: "",
     supabaseAnonKey: "",
+    categoryTiles: DEFAULT_CATEGORY_TILES,
     ...settings 
   });
-  const [activeTab, setActiveTab] = useState("security"); // 'security' | 'seo' | 'general' | 'razorpay' | 'custom_html'
+  const [activeTab, setActiveTab] = useState("landing"); // 'landing' | 'security' | 'seo' | 'general' | 'razorpay' | 'custom_html'
   const [showPassword, setShowPassword] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageFileUpload = (e, callback) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 900;
+        const MAX_HEIGHT = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        callback(dataUrl);
+      };
+      img.src = readerEvent.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const categoryTiles = formData.categoryTiles || DEFAULT_CATEGORY_TILES;
+
+  const handleUpdateCategoryTile = (index, field, value) => {
+    const updated = [...categoryTiles];
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData(prev => ({ ...prev, categoryTiles: updated }));
+  };
+
+  const handleAddCategoryTile = () => {
+    const newTile = {
+      id: `category-${Date.now()}`,
+      title: "New Category",
+      subtitle: "18K Gold Finish",
+      priceTag: "From ₹199",
+      image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80"
+    };
+    setFormData(prev => ({
+      ...prev,
+      categoryTiles: [...categoryTiles, newTile]
+    }));
+  };
+
+  const handleRemoveCategoryTile = (index) => {
+    if (categoryTiles.length <= 1) {
+      alert("At least one category tile must remain on the landing page.");
+      return;
+    }
+    const updated = categoryTiles.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, categoryTiles: updated }));
+  };
+
+  const handleResetCategoryTiles = () => {
+    if (window.confirm("Reset category showcase tiles back to ZOYARA factory defaults?")) {
+      setFormData(prev => ({ ...prev, categoryTiles: DEFAULT_CATEGORY_TILES }));
+    }
   };
 
   const handleSave = (e) => {
@@ -106,6 +187,7 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
       {/* Tabs */}
       <div className="flex border-b border-[#E6DCCF] bg-white rounded-t-xl overflow-x-auto text-xs font-semibold uppercase tracking-wider scrollbar-none">
         {[
+          { id: "landing", label: "Landing Page & Categories", icon: LayoutTemplate },
           { id: "security", label: "Admin Password & Supabase", icon: Lock },
           { id: "seo", label: "SEO & Search Engine Meta", icon: Search },
           { id: "general", label: "Brand & Offline Showrooms", icon: Store },
@@ -133,7 +215,294 @@ export default function StoreSettingsScreen({ settings, onRefreshData }) {
       <form onSubmit={handleSave} className="bg-white rounded-b-xl border border-t-0 border-[#E6DCCF] p-6 space-y-6 shadow-2xs">
         
         {/* ========================================================
-            TAB 0: ADMIN SECURITY & SUPABASE CLOUD DATABASE
+            TAB 0: LANDING PAGE & CATEGORY SHOWCASE TILES
+            ======================================================== */}
+        {activeTab === "landing" && (
+          <div className="space-y-8">
+            
+            {/* Header info */}
+            <div className="p-4 bg-[#F7F2EA] rounded-xl border border-[#E6DCCF] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <h3 className="font-serif text-base font-semibold text-[#18382D] flex items-center gap-2">
+                  <LayoutTemplate className="w-4 h-4 text-[#B88D4E]" />
+                  <span>Landing Page Category Tiles &amp; Photos Customizer</span>
+                </h3>
+                <p className="text-xs text-[#746B62]">
+                  Customize the categories, photos, titles, and price tags displayed on the storefront home page. Any edits reflect immediately.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetCategoryTiles}
+                  className="px-3 py-1.5 bg-white border border-[#E6DCCF] hover:bg-gray-50 text-[#746B62] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Reset to factory category tiles"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Defaults</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAddCategoryTile}
+                  className="px-3 py-1.5 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#B88D4E]" />
+                  <span>Add Category Tile</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Category Tiles Cards */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#18382D]">
+                  Shop By Category Grid ({categoryTiles.length} Tiles)
+                </span>
+                <span className="text-[11px] text-[#746B62]">
+                  Drag/Edit photo, title &amp; filter mapping
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {categoryTiles.map((tile, idx) => (
+                  <div 
+                    key={tile.id || idx}
+                    className="p-4 bg-[#FFFDFA] rounded-2xl border border-[#E6DCCF] shadow-xs space-y-3 relative hover:border-[#B88D4E]/70 transition-all"
+                  >
+                    {/* Tile Header */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#18382D] text-[#B88D4E]">
+                        Tile #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCategoryTile(idx)}
+                        className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                        title="Delete Category Tile"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Image Preview & Upload - Mobile responsive */}
+                    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                      <div className="w-24 h-24 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-[#F7F2EA] border border-[#E6DCCF] shrink-0 relative group self-center sm:self-auto">
+                        <img 
+                          src={tile.image} 
+                          alt={tile.title} 
+                          className="w-full h-full object-cover" 
+                        />
+                        <label className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-[10px] font-semibold">
+                          <Upload className="w-4 h-4 mb-0.5" />
+                          <span>Change</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleUpdateCategoryTile(idx, "image", dataUrl))} 
+                          />
+                        </label>
+                      </div>
+
+                      <div className="flex-1 w-full min-w-0 space-y-1.5">
+                        <label className="text-[10px] text-[#746B62] font-semibold block">Photo URL or Device Upload</label>
+                        <input
+                          type="text"
+                          value={tile.image}
+                          onChange={(e) => handleUpdateCategoryTile(idx, "image", e.target.value)}
+                          placeholder="https://..."
+                          className="w-full px-2.5 py-2 bg-white border border-[#E6DCCF] rounded-lg text-xs text-[#1B1A18] focus:outline-none focus:border-[#18382D]"
+                        />
+                        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F7F2EA] hover:bg-[#E6DCCF] rounded-lg text-xs text-[#18382D] font-semibold transition-colors cursor-pointer touch-manipulation">
+                          <Upload className="w-3.5 h-3.5 text-[#B88D4E]" />
+                          <span>Upload photo from phone / PC</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleUpdateCategoryTile(idx, "image", dataUrl))} 
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Title & Price Badge */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-[#746B62] font-semibold block mb-0.5">Category Title</label>
+                        <input
+                          type="text"
+                          value={tile.title}
+                          onChange={(e) => handleUpdateCategoryTile(idx, "title", e.target.value)}
+                          placeholder="e.g. Fine Jewellery"
+                          className="w-full px-2.5 py-2 bg-white border border-[#E6DCCF] rounded-lg text-xs font-semibold text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-[#746B62] font-semibold block mb-0.5">Price Tag Badge</label>
+                        <input
+                          type="text"
+                          value={tile.priceTag}
+                          onChange={(e) => handleUpdateCategoryTile(idx, "priceTag", e.target.value)}
+                          placeholder="e.g. From ₹399"
+                          className="w-full px-2.5 py-2 bg-white border border-[#E6DCCF] rounded-lg text-xs font-mono text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Subtitle & Filter mapping */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-[#746B62] font-semibold block mb-0.5">Subtitle / Tagline</label>
+                        <input
+                          type="text"
+                          value={tile.subtitle}
+                          onChange={(e) => handleUpdateCategoryTile(idx, "subtitle", e.target.value)}
+                          placeholder="e.g. 18K Gold Plated"
+                          className="w-full px-2.5 py-2 bg-white border border-[#E6DCCF] rounded-lg text-xs text-[#746B62] focus:outline-none focus:border-[#18382D]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-[#746B62] font-semibold block mb-0.5">Filter Category</label>
+                        <select
+                          value={tile.id}
+                          onChange={(e) => handleUpdateCategoryTile(idx, "id", e.target.value)}
+                          className="w-full px-2.5 py-2 bg-white border border-[#E6DCCF] rounded-lg text-xs text-[#18382D] focus:outline-none focus:border-[#18382D] cursor-pointer"
+                        >
+                          <option value="Jewellery">Jewellery (Fine / 18K)</option>
+                          <option value="Bras">Bras &amp; Bralettes</option>
+                          <option value="Underwear">Underwear &amp; Panties</option>
+                          <option value="antiTarnish">Anti-Tarnish Edit</option>
+                          <option value="under250">Budget Under ₹250</option>
+                          <option value="all">All Atelier Products</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hero Section Banner Content */}
+            <div className="p-5 bg-[#FAF8F5] rounded-2xl border border-[#DFD5C6] space-y-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#18382D]">
+                <Sparkles className="w-4 h-4 text-[#B88D4E]" />
+                <span>Hero Headline &amp; Editorial Cover Customizer</span>
+              </div>
+              <p className="text-xs text-[#746B62]">
+                Control the hero typography, banner messaging, and featured editorial photo at the top of the storefront.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Hero Badge Callout:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.heroBadge || "Quiet Luxury • Anti-Tarnish 18K Polish"}
+                      onChange={(e) => handleChange("heroBadge", e.target.value)}
+                      placeholder="Quiet Luxury • Anti-Tarnish 18K Polish"
+                      className="w-full px-3 py-2 bg-white border border-[#DFD5C6] rounded-xl text-xs text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Hero Headline:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.heroHeadline || "Fine Jewellery & Intimates,"}
+                      onChange={(e) => handleChange("heroHeadline", e.target.value)}
+                      placeholder="Fine Jewellery & Intimates,"
+                      className="w-full px-3 py-2 bg-white border border-[#DFD5C6] rounded-xl text-xs text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Hero Subheadline:
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.heroSubheadline || "Crafted for Everyday Grace."}
+                      onChange={(e) => handleChange("heroSubheadline", e.target.value)}
+                      placeholder="Crafted for Everyday Grace."
+                      className="w-full px-3 py-2 bg-white border border-[#DFD5C6] rounded-xl text-xs text-[#18382D] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Hero Featured Editorial Photo:
+                    </label>
+                    <div className="flex gap-3 items-center">
+                      <div className="w-20 h-24 rounded-xl overflow-hidden bg-[#F7F2EA] border border-[#DFD5C6] shrink-0 relative group">
+                        <img 
+                          src={formData.heroImageUrl || "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80"} 
+                          alt="Hero cover" 
+                          className="w-full h-full object-cover" 
+                        />
+                        <label className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-[9px] font-semibold">
+                          <Upload className="w-3.5 h-3.5 mb-0.5" />
+                          <span>Change</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleChange("heroImageUrl", dataUrl))} 
+                          />
+                        </label>
+                      </div>
+
+                      <div className="flex-1 space-y-1">
+                        <input
+                          type="text"
+                          value={formData.heroImageUrl || "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80"}
+                          onChange={(e) => handleChange("heroImageUrl", e.target.value)}
+                          placeholder="https://images.unsplash.com/..."
+                          className="w-full px-2.5 py-1.5 bg-white border border-[#DFD5C6] rounded-lg text-xs text-[#1B1A18] focus:outline-none focus:border-[#18382D]"
+                        />
+                        <label className="inline-flex items-center gap-1 text-[10px] text-[#18382D] font-semibold hover:underline cursor-pointer pt-0.5">
+                          <Upload className="w-3 h-3 text-[#B88D4E]" />
+                          <span>Upload hero image from computer</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => handleImageFileUpload(e, (dataUrl) => handleChange("heroImageUrl", dataUrl))} 
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#18382D] mb-1">
+                      Hero Paragraph Description:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.heroDescription || "Why should understated luxury cost thousands? ZOYARA crafts vacuum 18K anti-tarnish waterproof jewellery, cloud-soft wireless bralettes, and seamless cotton-gusset intimates — accessible from ₹150 to ₹400."}
+                      onChange={(e) => handleChange("heroDescription", e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-[#DFD5C6] rounded-xl text-xs text-[#746B62] focus:outline-none focus:border-[#18382D]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================
+            TAB 1: ADMIN SECURITY & SUPABASE CLOUD DATABASE
             ======================================================== */}
         {activeTab === "security" && (
           <div className="space-y-6">

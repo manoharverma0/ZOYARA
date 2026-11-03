@@ -187,13 +187,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                 </div>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   maxLength={10}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                   placeholder="98765 43210"
                   autoFocus
                   required
-                  className="flex-1 px-3 py-2.5 text-sm font-mono tracking-wider bg-transparent focus:outline-none"
+                  className="flex-1 px-3 py-2.5 text-base sm:text-sm font-mono tracking-wider bg-transparent focus:outline-none"
                 />
               </div>
             </div>
@@ -281,20 +283,23 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
             <div>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
                 maxLength={6}
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="• • • • • •"
                 autoFocus
                 required
-                className="w-full text-center text-2xl tracking-[0.45em] font-mono font-bold p-3 bg-white border-2 border-[#18382D] rounded-xl focus:ring-2 focus:ring-[#B88D4E] focus:outline-none"
+                className="w-full text-center text-2xl tracking-[0.45em] font-mono font-bold p-3.5 bg-white border-2 border-[#18382D] rounded-xl focus:ring-2 focus:ring-[#B88D4E] focus:outline-none shadow-inner"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || otpCode.length < 4}
-              className="w-full py-3.5 bg-[#18382D] hover:bg-[#234E3F] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+              className="w-full min-h-[46px] py-3.5 bg-[#18382D] hover:bg-[#234E3F] active:scale-[0.99] text-white rounded-xl text-xs font-semibold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 touch-manipulation"
             >
               <Lock className="w-4 h-4 text-[#B88D4E]" />
               <span>{loading ? "Verifying with MSG91..." : "Verify & Sign In"}</span>

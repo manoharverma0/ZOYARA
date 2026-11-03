@@ -31,11 +31,20 @@ import {
   resetAllDataToDefault
 } from "../../services/storage";
 import POSReceiptModal from "../POS/POSReceiptModal";
+import AdminSecurityOtpModal from "../Common/AdminSecurityOtpModal";
 
 export default function InventoryScreen({ products, settings, onRefreshData }) {
   const [activeTab, setActiveTab] = useState("catalog"); // 'catalog', 'sales', 'settings'
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  // High-Security 2FA Verification Modal State
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityActionConfig, setSecurityActionConfig] = useState({
+    title: "",
+    desc: "",
+    execute: () => {}
+  });
 
   // Add/Edit Product Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -188,10 +197,15 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
   };
 
   const handleDeleteProduct = (id, title) => {
-    if (window.confirm(`Delete product "${title}" from catalog?`)) {
-      deleteProduct(id);
-      onRefreshData();
-    }
+    setSecurityActionConfig({
+      title: `Delete "${title}"`,
+      desc: `Permanent removal of product SKU from catalog and barcode database. Requires owner OTP verification.`,
+      execute: () => {
+        deleteProduct(id);
+        onRefreshData();
+      }
+    });
+    setIsSecurityModalOpen(true);
   };
 
   const handleStockQuickAdjust = (prod, change) => {
@@ -711,14 +725,20 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
               {/* Reset to Default Seed */}
               <div className="pt-4 border-t border-[#F2ECE3]">
                 <button
+                  type="button"
                   onClick={() => {
-                    if (window.confirm("Reset all products and sales to initial default demo data?")) {
-                      resetAllDataToDefault();
-                      onRefreshData();
-                      alert("Database reset to initial demo products.");
-                    }
+                    setSecurityActionConfig({
+                      title: "Reset All Products & Clean Ledger",
+                      desc: "This will wipe all custom inventory modifications, reset stock counts, and clear store ledgers. Requires owner OTP verification.",
+                      execute: () => {
+                        resetAllDataToDefault();
+                        onRefreshData();
+                        alert("Database reset to initial demo products.");
+                      }
+                    });
+                    setIsSecurityModalOpen(true);
                   }}
-                  className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1 cursor-pointer"
+                  className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1 cursor-pointer font-medium"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Reset Demo Products & Clean Ledger</span>
@@ -926,6 +946,19 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
           onNewSale={() => setReprintSale(null)}
         />
       )}
+
+      {/* High-Security Owner 2FA Verification Modal */}
+      <AdminSecurityOtpModal
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
+        actionTitle={securityActionConfig.title}
+        actionDescription={securityActionConfig.desc}
+        onVerified={() => {
+          if (securityActionConfig.execute) {
+            securityActionConfig.execute();
+          }
+        }}
+      />
     </div>
   );
 }

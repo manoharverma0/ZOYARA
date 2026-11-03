@@ -282,6 +282,7 @@ export default function StaffTerminal({
 
           {activeStaffTab === "orders" && (
             <OrdersScreen
+              products={products}
               settings={settings}
               onRefreshData={onRefreshData}
             />

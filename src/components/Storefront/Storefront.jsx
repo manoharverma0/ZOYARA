@@ -16,9 +16,11 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "../../utils/barcode";
 import { sounds } from "../../utils/audio";
+import { DEFAULT_CATEGORY_TILES } from "../../data/initialProducts";
 
 export default function Storefront({ 
   products, 
+  settings,
   onAddToCart, 
   onOpenProductDetail, 
   _cartItems,
@@ -115,26 +117,26 @@ export default function Storefront({
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFFDFA]/10 border border-[#E9D9BD]/20 text-[#E9D9BD] text-xs uppercase tracking-[0.22em] font-medium backdrop-blur-xs">
               <Gem className="w-3.5 h-3.5 text-[#B88D4E]" />
-              <span>Quiet Luxury • Anti-Tarnish 18K Polish</span>
+              <span>{settings?.heroBadge || "Quiet Luxury • Anti-Tarnish 18K Polish"}</span>
             </div>
 
             <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-light tracking-tight text-[#FFFDFA] leading-[1.12]">
-              Fine Jewellery &amp; Intimates, <br />
-              <span className="italic font-serif text-[#E9D9BD]">Crafted for Everyday Grace.</span>
+              {settings?.heroHeadline || "Fine Jewellery & Intimates,"} <br />
+              <span className="italic font-serif text-[#E9D9BD]">{settings?.heroSubheadline || "Crafted for Everyday Grace."}</span>
             </h1>
 
             <p className="max-w-xl mx-auto lg:mx-0 text-xs sm:text-sm text-[#E7ECE4] font-sans font-light leading-relaxed">
-              Why should understated luxury cost thousands? <strong className="font-medium text-white">ZOYARA</strong> crafts vacuum 18K anti-tarnish waterproof jewellery, cloud-soft wireless bralettes, and seamless cotton-gusset intimates — accessible from ₹150 to ₹400.
+              {settings?.heroDescription || "Why should understated luxury cost thousands? ZOYARA crafts vacuum 18K anti-tarnish waterproof jewellery, cloud-soft wireless bralettes, and seamless cotton-gusset intimates — accessible from ₹150 to ₹400."}
             </p>
 
-            {/* Hero CTAs */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+            {/* Hero CTAs - Mobile-First responsive */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-2.5 sm:gap-3 pt-2 w-full">
               <button
                 onClick={() => {
                   onSelectCategory("Jewellery");
                   document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="px-6 py-3.5 rounded-full bg-[#B88D4E] hover:bg-[#A37B3E] text-white text-xs uppercase tracking-widest font-semibold transition-all cursor-pointer shadow-sm flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#B88D4E] hover:bg-[#A37B3E] active:scale-95 text-white text-xs uppercase tracking-widest font-semibold transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2 touch-manipulation"
               >
                 <span>Shop Fine Jewellery</span>
                 <ArrowRight className="w-4 h-4 text-[#FFFDFA]" />
@@ -145,50 +147,50 @@ export default function Storefront({
                   onSelectCategory("Bras");
                   document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-[#FFFDFA] border border-[#E9D9BD]/30 text-xs uppercase tracking-widest font-medium transition-all cursor-pointer backdrop-blur-xs"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-[#FFFDFA] border border-[#E9D9BD]/30 text-xs uppercase tracking-widest font-medium transition-all cursor-pointer backdrop-blur-xs flex items-center justify-center touch-manipulation"
               >
                 Zero-Wire Bralettes
               </button>
             </div>
 
             {/* Micro guarantees */}
-            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs text-[#E9D9BD]">
+            <div className="pt-3 sm:pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 text-xs text-[#E9D9BD]">
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#B88D4E]" />
-                <span>100% Water Resistant</span>
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B88D4E]" />
+                <span className="text-[11px] sm:text-xs">100% Water Resistant</span>
               </div>
-              <span>•</span>
+              <span className="opacity-40">•</span>
               <div className="flex items-center gap-1.5">
-                <Feather className="w-4 h-4 text-[#B88D4E]" />
-                <span>No-Poke Wirefree Bras</span>
+                <Feather className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B88D4E]" />
+                <span className="text-[11px] sm:text-xs">No-Poke Wirefree</span>
               </div>
-              <span>•</span>
+              <span className="opacity-40">•</span>
               <div className="flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-[#B88D4E]" />
-                <span>Complimentary Gift Box</span>
+                <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B88D4E]" />
+                <span className="text-[11px] sm:text-xs">Free Luxury Box</span>
               </div>
             </div>
           </div>
 
           {/* Right Featured Editorial Visual (5 cols) */}
           <div className="lg:col-span-5 relative flex justify-center">
-            <div className="relative w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden border border-[#E9D9BD]/20 shadow-2xl bg-[#10261E]">
+            <div className="relative w-full max-w-[280px] sm:max-w-sm aspect-[4/5] rounded-2xl overflow-hidden border border-[#E9D9BD]/20 shadow-2xl bg-[#10261E]">
               <img
-                src="https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80"
+                src={settings?.heroImageUrl || "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80"}
                 alt="ZOYARA Fine Jewellery Editorial"
                 className="w-full h-full object-cover object-center transform hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#10261E] via-transparent to-transparent opacity-80"></div>
               
-              <div className="absolute bottom-5 left-5 right-5 p-4 rounded-xl bg-[#18382D]/85 backdrop-blur-md border border-[#E9D9BD]/30 text-white">
-                <div className="flex items-center justify-between text-[10px] uppercase font-mono tracking-wider text-[#B88D4E]">
+              <div className="absolute bottom-3 sm:bottom-5 left-3 sm:left-5 right-3 sm:right-5 p-3 sm:p-4 rounded-xl bg-[#18382D]/85 backdrop-blur-md border border-[#E9D9BD]/30 text-white">
+                <div className="flex items-center justify-between text-[9px] sm:text-[10px] uppercase font-mono tracking-wider text-[#B88D4E]">
                   <span>Featured Atelier Creation</span>
                   <span>₹249</span>
                 </div>
-                <h4 className="font-serif text-base font-normal mt-0.5 text-white">
+                <h4 className="font-serif text-sm sm:text-base font-normal mt-0.5 text-white truncate">
                   Aura Baroque Pearl Drop Hoops
                 </h4>
-                <p className="text-[11px] text-[#E7ECE4] mt-0.5">
+                <p className="text-[10px] sm:text-[11px] text-[#E7ECE4] mt-0.5 line-clamp-1">
                   18K PVD Anti-Tarnish Finish with Freshwater Baroque Pearl
                 </p>
               </div>
@@ -199,56 +201,20 @@ export default function Storefront({
       </section>
 
       {/* ========================================================
-          2. SHOP-BY-CATEGORY VISUAL TILES
+          2. SHOP-BY-CATEGORY VISUAL TILES (Mobile-First responsive)
           ======================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center space-y-1 mb-8">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B88D4E]">
+      <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="text-center space-y-1 mb-6 sm:mb-8">
+          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] text-[#B88D4E]">
             Curated Boutiques
           </span>
-          <h2 className="font-serif text-2xl sm:text-3xl text-[#18382D] font-normal">
+          <h2 className="font-serif text-xl sm:text-3xl text-[#18382D] font-normal">
             Shop by Category
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
-          {[
-            {
-              id: "Jewellery",
-              title: "Fine Jewellery",
-              subtitle: "Earrings, Rings & Chokers",
-              image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
-              priceTag: "From ₹179"
-            },
-            {
-              id: "Bras",
-              title: "Bras & Bralettes",
-              subtitle: "Zero Wire & Seamless",
-              image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?auto=format&fit=crop&w=600&q=80",
-              priceTag: "From ₹289"
-            },
-            {
-              id: "Underwear",
-              title: "Girls Underwear",
-              subtitle: "Pure Cotton & Laser-Cut",
-              image: "https://images.unsplash.com/photo-1582533561751-ef6f6ab93a2e?auto=format&fit=crop&w=600&q=80",
-              priceTag: "From ₹229"
-            },
-            {
-              id: "antiTarnish",
-              title: "Anti-Tarnish 18K",
-              subtitle: "Shower & Sweat Proof",
-              image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80",
-              priceTag: "18K Gold Polish"
-            },
-            {
-              id: "under250",
-              title: "Under ₹250",
-              subtitle: "Affordable Daily Luxury",
-              image: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=600&q=80",
-              priceTag: "Best Value"
-            }
-          ].map(cat => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-4">
+          {(settings?.categoryTiles || DEFAULT_CATEGORY_TILES).map(cat => {
             const isSelected = selectedCategory === cat.id;
             return (
               <div
@@ -257,29 +223,30 @@ export default function Storefront({
                   onSelectCategory(cat.id);
                   document.getElementById("catalog-section")?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className={`group cursor-pointer rounded-2xl overflow-hidden border p-3 flex flex-col justify-between transition-all duration-300 relative ${
+                className={`group cursor-pointer rounded-2xl overflow-hidden border p-2.5 sm:p-3 flex flex-col justify-between transition-all duration-300 relative touch-manipulation active:scale-[0.98] ${
                   isSelected 
                     ? "bg-[#18382D] text-[#FFFDFA] border-[#18382D] shadow-md" 
                     : "bg-[#FFFDFA] text-[#1B1A18] border-[#E6DCCF] hover:border-[#B88D4E] hover:shadow-xs"
                 }`}
               >
-                <div className="aspect-square w-full rounded-xl overflow-hidden mb-3 bg-[#F7F2EA] relative">
+                <div className="aspect-square w-full rounded-xl overflow-hidden mb-2.5 sm:mb-3 bg-[#F7F2EA] relative">
                   <img
                     src={cat.image}
                     alt={cat.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
                   />
-                  <span className={`absolute top-2 right-2 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold shadow-xs ${
+                  <span className={`absolute top-1.5 sm:top-2 right-1.5 sm:right-2 text-[9px] sm:text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded-full font-bold shadow-xs ${
                     isSelected ? "bg-white text-[#18382D]" : "bg-[#18382D] text-[#B88D4E]"
                   }`}>
                     {cat.priceTag}
                   </span>
                 </div>
                 <div>
-                  <h3 className={`font-serif text-sm font-medium ${isSelected ? "text-white" : "text-[#18382D]"}`}>
+                  <h3 className={`font-serif text-xs sm:text-sm font-medium leading-tight ${isSelected ? "text-white" : "text-[#18382D]"}`}>
                     {cat.title}
                   </h3>
-                  <p className={`text-[11px] truncate mt-0.5 ${isSelected ? "text-[#E9D9BD]" : "text-[#746B62]"}`}>
+                  <p className={`text-[10px] sm:text-[11px] truncate mt-0.5 ${isSelected ? "text-[#E9D9BD]" : "text-[#746B62]"}`}>
                     {cat.subtitle}
                   </p>
                 </div>

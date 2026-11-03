@@ -17,19 +17,34 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Box
+  Box,
+  Trash2
 } from "lucide-react";
-import { getOnlineOrders, updateOnlineOrderStatus } from "../../services/storage";
+import { 
+  getOnlineOrders, 
+  updateOnlineOrderStatus, 
+  deleteOnlineOrder, 
+  clearSampleOrders 
+} from "../../services/storage";
 import { formatCurrency } from "../../utils/barcode";
 import InvoiceModal from "../Common/InvoiceModal";
+import AdminSecurityOtpModal from "../Common/AdminSecurityOtpModal";
 
-export default function OrdersScreen({ settings, onRefreshData }) {
+export default function OrdersScreen({ settings, products = [], onRefreshData }) {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // 'all' | 'Processing' | 'Packed' | 'Dispatched' | 'Delivered'
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [copiedOrderId, setCopiedOrderId] = useState(null);
+
+  // High-Security 2FA Verification Modal State
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [securityActionConfig, setSecurityActionConfig] = useState({
+    title: "",
+    desc: "",
+    execute: () => {}
+  });
 
   // Editable tracking info per order
   const [trackingForms, setTrackingForms] = useState({});
@@ -67,6 +82,32 @@ export default function OrdersScreen({ settings, onRefreshData }) {
     setOrders(updated);
     alert(`Order #${orderId} updated to Dispatched with Tracking AWB: ${currentForm.awbNumber}`);
     if (onRefreshData) onRefreshData();
+  };
+
+  const handleDeleteOrder = (orderId) => {
+    setSecurityActionConfig({
+      title: `Delete Order #${orderId}`,
+      desc: `Permanent deletion of order records, customer shipping details, and fulfillment trail. Dispatched to owner phone.`,
+      execute: () => {
+        const updated = deleteOnlineOrder(orderId);
+        setOrders(updated);
+        if (onRefreshData) onRefreshData();
+      }
+    });
+    setIsSecurityModalOpen(true);
+  };
+
+  const handleClearDemoOrders = () => {
+    setSecurityActionConfig({
+      title: "Remove Demo Seed Orders",
+      desc: "Remove test and sample order records from the store fulfillment queue. Requires owner authorization.",
+      execute: () => {
+        const updated = clearSampleOrders();
+        setOrders(updated);
+        if (onRefreshData) onRefreshData();
+      }
+    });
+    setIsSecurityModalOpen(true);
   };
 
   const handleCopy = (text, id) => {
@@ -137,6 +178,17 @@ export default function OrdersScreen({ settings, onRefreshData }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {orders.some(o => o.orderId === "ZY-ORD-90214") && (
+            <button
+              onClick={handleClearDemoOrders}
+              className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl border border-amber-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Remove demo sample orders"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-amber-600" />
+              <span>Clear Demo Orders</span>
+            </button>
+          )}
+
           <button
             onClick={loadOrders}
             className="p-2 text-[#746B62] hover:text-[#18382D] hover:bg-[#F7F2EA] rounded-xl border border-[#E6DCCF] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-medium"
@@ -300,51 +352,80 @@ export default function OrdersScreen({ settings, onRefreshData }) {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="text-right mr-2 hidden sm:block">
-                      <div className="font-serif text-lg font-bold text-[#18382D]">
-                        ₹{order.finalTotal}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 w-full md:w-auto">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:mr-2">
+                      <div className="text-left sm:text-right">
+                        <div className="font-serif text-base sm:text-lg font-bold text-[#18382D]">
+                          ₹{order.finalTotal}
+                        </div>
+                        <div className="text-[10px] text-[#746B62]">
+                          {order.items?.length || 0} items
+                        </div>
                       </div>
-                      <div className="text-[10px] text-[#746B62]">
-                        {order.items?.length || 0} items
+
+                      <div className="flex items-center gap-1.5 sm:hidden">
+                        <button
+                          onClick={() => handleDeleteOrder(order.orderId)}
+                          className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer touch-manipulation"
+                          title="Delete Order"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => setExpandedOrderId(isExpanded ? null : order.orderId)}
+                          className="p-2 text-[#746B62] hover:bg-[#F7F2EA] rounded-xl transition-colors cursor-pointer touch-manipulation"
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        </button>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => setSelectedOrderForInvoice(order)}
-                      className="px-3 py-2 rounded-xl bg-[#F7F2EA] hover:bg-[#E6DCCF] text-[#18382D] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E6DCCF]"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-[#B88D4E]" />
-                      <span>Print Invoice</span>
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => setSelectedOrderForInvoice(order)}
+                        className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-[#F7F2EA] hover:bg-[#E6DCCF] text-[#18382D] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-[#E6DCCF] touch-manipulation min-h-[38px]"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-[#B88D4E]" />
+                        <span>Print Bill</span>
+                      </button>
 
-                    <button
-                      onClick={() => sendWhatsAppUpdate(order)}
-                      className="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-emerald-200"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>WhatsApp Patron</span>
-                    </button>
+                      <button
+                        onClick={() => sendWhatsAppUpdate(order)}
+                        className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-emerald-200 touch-manipulation min-h-[38px]"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>WhatsApp</span>
+                      </button>
 
-                    <button
-                      onClick={() => setExpandedOrderId(isExpanded ? null : order.orderId)}
-                      className="p-2 text-[#746B62] hover:bg-[#F7F2EA] rounded-xl transition-colors cursor-pointer"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                    </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order.orderId)}
+                        className="hidden sm:flex p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200 touch-manipulation"
+                        title="Delete Order"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        onClick={() => setExpandedOrderId(isExpanded ? null : order.orderId)}
+                        className="hidden sm:flex p-2 text-[#746B62] hover:bg-[#F7F2EA] rounded-xl transition-colors cursor-pointer touch-manipulation"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Always-Visible Compact Row */}
+                {/* Always-Visible Compact Row - Mobile responsive */}
                 <div className="p-4 sm:p-5 bg-[#FFFDFA] grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                   {/* Customer & Address */}
-                  <div className="space-y-1.5 border-r md:border-[#E6DCCF] pr-4">
+                  <div className="space-y-1.5 border-b md:border-b-0 md:border-r border-[#E6DCCF] pb-3.5 md:pb-0 md:pr-4">
                     <div className="font-semibold text-sm text-[#18382D]">
                       {order.customerName}
                     </div>
                     <div className="flex items-center gap-2 text-[#746B62]">
-                      <Phone className="w-3 h-3 text-[#B88D4E]" />
-                      <a href={`tel:+91${order.customerPhone}`} className="hover:underline font-mono">
+                      <Phone className="w-3.5 h-3.5 text-[#B88D4E]" />
+                      <a href={`tel:+91${order.customerPhone}`} className="hover:underline font-mono text-xs">
                         +91 {order.customerPhone}
                       </a>
                     </div>
@@ -356,29 +437,55 @@ export default function OrdersScreen({ settings, onRefreshData }) {
                     </div>
                   </div>
 
-                  {/* Items Ordered */}
-                  <div className="space-y-2 border-r md:border-[#E6DCCF] pr-4">
-                    <span className="text-[11px] font-semibold text-[#746B62] uppercase tracking-wider block">
-                      Ordered Products ({order.items?.length || 0})
-                    </span>
-                    <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                      {order.items?.map((it, idx) => (
-                        <div key={idx} className="flex items-center gap-2.5">
-                          <img 
-                            src={it.image} 
-                            alt={it.title}
-                            className="w-9 h-9 rounded-lg object-cover border border-[#E6DCCF] shrink-0" 
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-[#18382D] truncate text-[11px]">
-                              {it.title}
-                            </p>
-                            <p className="text-[10px] text-[#746B62]">
-                              Size: {it.selectedSize || "Free Size"} • Qty: {it.quantity} • ₹{it.price}
-                            </p>
+                  {/* Items Ordered with Live Stock Sync */}
+                  <div className="space-y-2 border-b md:border-b-0 md:border-r border-[#E6DCCF] pb-3.5 md:pb-0 md:pr-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-[#746B62] uppercase tracking-wider block">
+                        Ordered Items ({order.items?.length || 0})
+                      </span>
+                      <span className="text-[10px] text-[#B88D4E] font-medium">Live Inventory Sync</span>
+                    </div>
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                      {order.items?.map((it, idx) => {
+                        const liveProduct = products.find(p => p.id === it.id || (it.sku && p.sku === it.sku) || (it.barcode && p.barcode === it.barcode));
+                        const currentStock = liveProduct ? liveProduct.stock : null;
+                        const isOutOfStock = currentStock !== null && currentStock <= 0;
+
+                        return (
+                          <div key={idx} className="flex items-center gap-2.5 p-1.5 rounded-lg bg-[#F7F2EA]/40 border border-[#E6DCCF]/60">
+                            <img 
+                              src={liveProduct?.images?.[0] || it.image} 
+                              alt={it.title}
+                              className="w-11 h-11 rounded-lg object-cover border border-[#E6DCCF] shrink-0" 
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <p className="font-medium text-[#18382D] truncate text-[11px]">
+                                  {liveProduct?.title || it.title}
+                                </p>
+                                {liveProduct ? (
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                                    isOutOfStock 
+                                      ? "bg-rose-100 text-rose-700 border border-rose-200" 
+                                      : currentStock < 5 
+                                      ? "bg-amber-100 text-amber-800 border border-amber-200" 
+                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  }`}>
+                                    {isOutOfStock ? "0 Left" : `${currentStock} in Stock`}
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
+                                    Catalog Updated
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-[#746B62] mt-0.5">
+                                Size: <span className="font-semibold text-[#18382D]">{it.selectedSize || "Free Size"}</span> • Qty: <span className="font-bold text-[#18382D]">{it.quantity}</span> • ₹{it.price}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -391,7 +498,7 @@ export default function OrdersScreen({ settings, onRefreshData }) {
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                        className="bg-white border border-[#E6DCCF] rounded-lg px-2 py-1 text-xs font-semibold text-[#18382D] cursor-pointer focus:outline-none"
+                        className="bg-white border border-[#E6DCCF] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#18382D] cursor-pointer focus:outline-none"
                       >
                         <option value="Processing">Processing</option>
                         <option value="Packed">Packed</option>
@@ -401,7 +508,7 @@ export default function OrdersScreen({ settings, onRefreshData }) {
                     </div>
 
                     <form onSubmit={(e) => handleTrackingUpdate(order.orderId, e)} className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] text-[#746B62] block mb-0.5">Courier</label>
                           <input
@@ -412,7 +519,7 @@ export default function OrdersScreen({ settings, onRefreshData }) {
                               [order.orderId]: { ...prev[order.orderId], courierName: e.target.value }
                             }))}
                             placeholder="e.g. Delhivery"
-                            className="w-full bg-white border border-[#E6DCCF] rounded-lg px-2 py-1 text-xs text-[#1B1A18] focus:outline-none"
+                            className="w-full bg-white border border-[#E6DCCF] rounded-lg px-2.5 py-1.5 text-xs text-[#1B1A18] focus:outline-none"
                           />
                         </div>
 
@@ -426,16 +533,16 @@ export default function OrdersScreen({ settings, onRefreshData }) {
                               [order.orderId]: { ...prev[order.orderId], awbNumber: e.target.value }
                             }))}
                             placeholder="e.g. 142859201"
-                            className="w-full bg-white border border-[#E6DCCF] rounded-lg px-2 py-1 text-xs font-mono text-[#1B1A18] focus:outline-none"
+                            className="w-full bg-white border border-[#E6DCCF] rounded-lg px-2.5 py-1.5 text-xs font-mono text-[#1B1A18] focus:outline-none"
                           />
                         </div>
                       </div>
 
                       <button
                         type="submit"
-                        className="w-full py-1.5 bg-[#18382D] hover:bg-[#122a22] text-[#FFFDFA] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                        className="w-full py-2 bg-[#18382D] hover:bg-[#122a22] text-[#FFFDFA] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm touch-manipulation min-h-[38px]"
                       >
-                        <Send className="w-3 h-3 text-[#B88D4E]" />
+                        <Send className="w-3.5 h-3.5 text-[#B88D4E]" />
                         <span>Update &amp; Mark Dispatched</span>
                       </button>
                     </form>
@@ -498,6 +605,19 @@ export default function OrdersScreen({ settings, onRefreshData }) {
           initialFormat="a4"
         />
       )}
+
+      {/* 5. High-Security Owner 2FA Verification Modal */}
+      <AdminSecurityOtpModal
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
+        actionTitle={securityActionConfig.title}
+        actionDescription={securityActionConfig.desc}
+        onVerified={() => {
+          if (securityActionConfig.execute) {
+            securityActionConfig.execute();
+          }
+        }}
+      />
     </div>
   );
 }

@@ -854,6 +854,20 @@ export function updateOnlineOrderStatus(orderId, newStatus, trackingData = {}) {
   return updatedOrders;
 }
 
+export function deleteOnlineOrder(orderId) {
+  const orders = getOnlineOrders();
+  const updatedOrders = orders.filter(ord => ord.orderId !== orderId);
+  saveOnlineOrders(updatedOrders);
+  return updatedOrders;
+}
+
+export function clearSampleOrders() {
+  const orders = getOnlineOrders();
+  const filtered = orders.filter(ord => ord.orderId !== "ZY-ORD-90214");
+  saveOnlineOrders(filtered);
+  return filtered;
+}
+
 export function createOnlineOrder(orderData) {
   const orders = getOnlineOrders();
   const year = new Date().getFullYear();

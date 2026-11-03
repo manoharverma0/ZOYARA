@@ -243,6 +243,7 @@ export default function App() {
           onAddToCart={handleAddToCart}
           onOpenProductDetail={(prod) => setSelectedProduct(prod)}
           cartItems={cartItems}
+          settings={settings}
           selectedCategory={selectedCategory}
           onSelectCategory={(cat) => setSelectedCategory(cat)}
           wishlistIds={wishlistIds}
