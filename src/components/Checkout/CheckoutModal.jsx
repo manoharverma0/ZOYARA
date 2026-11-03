@@ -84,11 +84,16 @@ export default function CheckoutModal({
       return;
     }
 
-    const razorpayKey = (
+    let razorpayKey = (
       (typeof import.meta !== "undefined" && import.meta.env?.VITE_RAZORPAY_KEY_ID) || 
       currentSettings.razorpayKeyId || 
       "rzp_live_TvZx817mfaHPhW"
     ).trim();
+
+    // Never use legacy test keys in production
+    if (!razorpayKey || razorpayKey.startsWith("rzp_test_")) {
+      razorpayKey = "rzp_live_TvZx817mfaHPhW";
+    }
 
     const options = {
       key: razorpayKey,

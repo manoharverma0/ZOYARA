@@ -393,6 +393,11 @@ export function getStoreSettings() {
     if (!parsed.staffPin || parsed.staffPin === "1234") {
       parsed.staffPin = "85200";
     }
+    // Auto-migrate any cached test key in localStorage to the official live key
+    if (!parsed.razorpayKeyId || parsed.razorpayKeyId.startsWith("rzp_test_")) {
+      parsed.razorpayKeyId = "rzp_live_TvZx817mfaHPhW";
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(parsed));
+    }
     return parsed;
   } catch {
     return STORE_SETTINGS;
