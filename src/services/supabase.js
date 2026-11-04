@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { getStoreSettings } from "./storage";
 
-const DEFAULT_SUPABASE_URL = "";
-const DEFAULT_SUPABASE_KEY = "";
+const DEFAULT_SUPABASE_URL = "https://pozjbjhrwtuihiqqjyxr.supabase.co";
+const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvempiamhyd3R1aWhpcXFqeXhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjQ2NDMsImV4cCI6MjEwODYwMDY0M30.e4EHCWpdc5BaMY_LxlJli419ES6o-DqQP-p1Xb6f-WA";
 
 // Read Supabase credentials from .env, runtime store settings, or project defaults
 export function getSupabaseCredentials() {
@@ -17,8 +17,7 @@ export function getSupabaseCredentials() {
     supabaseUrl && 
     supabaseAnonKey && 
     supabaseUrl.startsWith("https://") &&
-    !supabaseUrl.includes("your-project") &&
-    !supabaseUrl.includes("pozjbjhrwtuihiqqjyxr")
+    !supabaseUrl.includes("your-project")
   );
 
   return { supabaseUrl, supabaseAnonKey, isConfigured };
@@ -224,7 +223,7 @@ export async function testSupabaseConnection(overrideUrl, overrideKey) {
       return { success: false, error: "Supabase URL and Anon Key are required." };
     }
 
-    if (!url.startsWith("https://") || url.includes("your-project") || url.includes("pozjbjhrwtuihiqqjyxr")) {
+    if (!url.startsWith("https://") || url.includes("your-project")) {
       return { success: false, error: "Please enter a valid, active Supabase project URL." };
     }
 
@@ -238,6 +237,39 @@ export async function testSupabaseConnection(overrideUrl, overrideKey) {
     return { success: true, count: data ? data.length : 0 };
   } catch (err) {
     return { success: false, error: err.message || "Network error reaching Supabase." };
+  }
+}
+
+// Subscribe to realtime database changes on products table
+export function subscribeToLiveProducts(onUpdate) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return () => {};
+
+  try {
+    const channel = supabase
+      .channel("realtime-products-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products" },
+        async () => {
+          const fresh = await fetchLiveProducts();
+          if (fresh && typeof onUpdate === "function") {
+            onUpdate(fresh);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // ignore
+      }
+    };
+  } catch (err) {
+    console.warn("[ZOYARA Supabase] Realtime products subscription warning:", err);
+    return () => {};
   }
 }
 

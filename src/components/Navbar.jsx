@@ -190,15 +190,7 @@ export default function Navbar({
               </span>
             </button>
 
-            {/* Staff POS & Terminal entry */}
-            <button
-              onClick={onRequestStaffPortal}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFDFA] hover:bg-[#E7ECE4] text-[#746B62] hover:text-[#18382D] border border-[#E6DCCF] rounded-full text-[11px] font-mono tracking-wider transition-all cursor-pointer ml-1"
-              title="Store Cashier & POS Terminal"
-            >
-              <Lock className="w-3 h-3 text-[#B88D4E]" />
-              <span>POS</span>
-            </button>
+
           </div>
         </div>
       </div>
@@ -385,13 +377,6 @@ export default function Navbar({
                 </button>
               )}
 
-              <button
-                onClick={() => { onRequestStaffPortal(); setMobileMenuOpen(false); }}
-                className="w-full py-2.5 bg-white text-[#746B62] hover:text-[#18382D] rounded-xl text-xs font-mono flex items-center justify-center gap-2 cursor-pointer border border-[#E6DCCF]"
-              >
-                <Lock className="w-3.5 h-3.5 text-[#B88D4E]" />
-                <span>Store POS &amp; Staff Counter</span>
-              </button>
             </div>
           </aside>
         </div>,

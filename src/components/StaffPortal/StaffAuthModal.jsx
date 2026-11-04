@@ -15,7 +15,12 @@ export default function StaffAuthModal({ isOpen, onClose, onSuccess }) {
     const validPin = storeSettings.staffPin || "85200";
     if (pin.trim() === validPin.trim()) {
       setError(false);
-      localStorage.setItem("zayara_staff_authenticated", "true");
+      try {
+        localStorage.removeItem("zayara_staff_authenticated");
+        sessionStorage.setItem("zayara_staff_authenticated", "true");
+      } catch {
+        // ignore
+      }
       onSuccess();
     } else {
       setError(true);

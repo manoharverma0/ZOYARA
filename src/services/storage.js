@@ -6,7 +6,8 @@ import {
   fetchLiveProducts,
   pushAllProductsToSupabase,
   testSupabaseConnection,
-  getSupabaseCredentials
+  getSupabaseCredentials,
+  subscribeToLiveProducts
 } from "./supabase";
 
 export { 
@@ -16,7 +17,8 @@ export {
   fetchLiveProducts,
   pushAllProductsToSupabase,
   testSupabaseConnection,
-  getSupabaseCredentials 
+  getSupabaseCredentials,
+  subscribeToLiveProducts
 };
 
 const STORAGE_KEYS = {
@@ -132,8 +134,12 @@ export function addProduct(newProd) {
   saveProducts(updated);
   // Log stock addition
   recordStockAdjustment(newProd.id, newProd.title, "IN", Number(newProd.stock || 0), "Initial Stock Addition");
-  // Sync live to Supabase cloud
-  syncProductToSupabase(newProd).catch(e => console.warn("[Supabase Sync Error]:", e));
+  // Sync live to Supabase cloud immediately
+  syncProductToSupabase(newProd)
+    .then(ok => {
+      if (!ok) console.warn("[Supabase Sync Warning]: Product saved locally, but database sync returned false.");
+    })
+    .catch(e => console.warn("[Supabase Sync Error]:", e));
   return updated;
 }
 
@@ -141,8 +147,12 @@ export function updateProduct(updatedProd) {
   const current = getProducts();
   const updated = current.map(p => (p.id === updatedProd.id ? updatedProd : p));
   saveProducts(updated);
-  // Sync live to Supabase cloud
-  syncProductToSupabase(updatedProd).catch(e => console.warn("[Supabase Sync Error]:", e));
+  // Sync live to Supabase cloud immediately
+  syncProductToSupabase(updatedProd)
+    .then(ok => {
+      if (!ok) console.warn("[Supabase Sync Warning]: Product updated locally, but database sync returned false.");
+    })
+    .catch(e => console.warn("[Supabase Sync Error]:", e));
   return updated;
 }
 
@@ -150,18 +160,33 @@ export function deleteProduct(productId) {
   const current = getProducts();
   const updated = current.filter(p => p.id !== productId);
   saveProducts(updated);
-  // Sync live to Supabase cloud
-  deleteProductFromSupabase(productId).catch(e => console.warn("[Supabase Sync Error]:", e));
+  // Sync live to Supabase cloud immediately
+  deleteProductFromSupabase(productId)
+    .then(ok => {
+      if (!ok) console.warn("[Supabase Sync Warning]: Product deleted locally, but database sync returned false.");
+    })
+    .catch(e => console.warn("[Supabase Sync Error]:", e));
   return updated;
 }
 
-// Sync products from Supabase to local storage
+// Sync products from Supabase database as the primary source of truth
 export async function syncWithSupabase() {
   try {
     const liveProducts = await fetchLiveProducts();
     if (liveProducts && liveProducts.length > 0) {
       saveProducts(liveProducts);
       return liveProducts;
+    }
+    
+    // If Supabase is connected but empty (0 products in cloud), seed it with initial catalogue
+    const { isConfigured } = getSupabaseCredentials();
+    if (isConfigured && INITIAL_PRODUCTS && INITIAL_PRODUCTS.length > 0) {
+      console.log("[ZOYARA Database] Seeding initial catalogue into cloud database...");
+      const pushRes = await pushAllProductsToSupabase(INITIAL_PRODUCTS);
+      if (pushRes.success) {
+        saveProducts(INITIAL_PRODUCTS);
+        return INITIAL_PRODUCTS;
+      }
     }
   } catch (err) {
     console.warn("[ZOYARA] Could not sync with Supabase:", err);

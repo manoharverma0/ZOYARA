@@ -18,7 +18,8 @@ import {
   getCurrentCustomer, 
   getWishlist, 
   toggleWishlistItem,
-  syncWithSupabase
+  syncWithSupabase,
+  subscribeToLiveProducts
 } from "./services/storage";
 import { applyDynamicSeo } from "./utils/seo";
 import { 
@@ -32,24 +33,47 @@ import {
 
 export default function App() {
   // View mode: 'website' (customer facing) or 'staff' (private back-office POS)
-  const [viewMode, setViewMode] = useState(() => {
+  // Default is strictly 'website' — never allow unauthenticated access to staff POS
+  const [viewMode, setViewMode] = useState("website");
+  const [isStaffAuthModalOpen, setIsStaffAuthModalOpen] = useState(false);
+
+  // Secret /poszoyara routing handler: POS is never linked on the site, only accessible via /poszoyara
+  useEffect(() => {
+    // Purge any legacy localStorage bypass flag
     try {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (
-        urlParams.get("portal") === "staff" || 
-        urlParams.get("portal") === "billing" || 
-        window.location.hash === "#staff" || 
-        window.location.hash === "#billing" ||
-        window.location.hash === "#pos"
-      ) {
-        return "staff";
-      }
+      localStorage.removeItem("zayara_staff_authenticated");
     } catch {
       // ignore
     }
-    return "website";
-  });
-  const [isStaffAuthModalOpen, setIsStaffAuthModalOpen] = useState(false);
+
+    const evaluateSecretRoute = () => {
+      const path = (window.location.pathname || "").toLowerCase();
+      const hash = (window.location.hash || "").toLowerCase();
+      const search = new URLSearchParams(window.location.search);
+      const isPosRequested = 
+        path.includes("poszoyara") || 
+        hash.includes("poszoyara") || 
+        hash === "#pos" || 
+        search.get("portal") === "poszoyara";
+
+      if (isPosRequested) {
+        const isSessionAuth = sessionStorage.getItem("zayara_staff_authenticated") === "true";
+        if (isSessionAuth) {
+          setViewMode("staff");
+        } else {
+          setIsStaffAuthModalOpen(true);
+        }
+      }
+    };
+
+    evaluateSecretRoute();
+    window.addEventListener("popstate", evaluateSecretRoute);
+    window.addEventListener("hashchange", evaluateSecretRoute);
+    return () => {
+      window.removeEventListener("popstate", evaluateSecretRoute);
+      window.removeEventListener("hashchange", evaluateSecretRoute);
+    };
+  }, []);
 
   // Products and Store Settings
   const [products, setProducts] = useState(() => getProducts());
@@ -102,7 +126,7 @@ export default function App() {
     });
   };
 
-  // Sync with live Supabase database on mount and on window focus / tab switch
+  // Sync with live Supabase database on mount, listen to Realtime changes, and sync on tab focus
   useEffect(() => {
     const handleSync = () => {
       syncWithSupabase().then(liveProds => {
@@ -114,6 +138,13 @@ export default function App() {
 
     handleSync();
 
+    // Subscribe to live Supabase database broadcasts (Postgres changes)
+    const unsubscribe = subscribeToLiveProducts((freshProds) => {
+      if (freshProds && freshProds.length > 0) {
+        setProducts(freshProds);
+      }
+    });
+
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         handleSync();
@@ -124,6 +155,7 @@ export default function App() {
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
+      unsubscribe();
       window.removeEventListener("focus", handleSync);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
@@ -217,10 +249,13 @@ export default function App() {
         settings={settings}
         onRefreshData={loadData}
         onExitToWebsite={() => {
-          setViewMode("website");
-          if (window.location.search.includes("portal=") || window.location.hash) {
-            window.history.replaceState(null, "", window.location.pathname);
+          try {
+            sessionStorage.removeItem("zayara_staff_authenticated");
+          } catch {
+            // ignore
           }
+          setViewMode("website");
+          window.history.replaceState(null, "", "/");
         }}
       />
     );
@@ -540,16 +575,6 @@ export default function App() {
               <ArrowUp className="w-3 h-3 text-[#B88D4E]" />
               <span>Back to Top</span>
             </button>
-
-            {/* Discreet Staff Portal Entry (Protected by PIN) */}
-            <button
-              onClick={handleRequestStaffPortal}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[#E7ECE4]/80 hover:text-[#B88D4E] hover:bg-white/10 transition-colors cursor-pointer text-[10px] font-mono border border-transparent hover:border-[#E6DCCF]/20"
-              title="Private Store Terminal for Cashier & Staff"
-            >
-              <Lock className="w-3 h-3" />
-              <span>Store POS &amp; Staff Terminal</span>
-            </button>
           </div>
         </div>
       </footer>
@@ -557,7 +582,12 @@ export default function App() {
       {/* Staff Authentication PIN Modal */}
       <StaffAuthModal
         isOpen={isStaffAuthModalOpen}
-        onClose={() => setIsStaffAuthModalOpen(false)}
+        onClose={() => {
+          setIsStaffAuthModalOpen(false);
+          if (viewMode !== "staff") {
+            window.history.replaceState(null, "", "/");
+          }
+        }}
         onSuccess={() => {
           setIsStaffAuthModalOpen(false);
           setViewMode("staff");
