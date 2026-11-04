@@ -1097,13 +1097,29 @@ export default function InventoryScreen({ products, settings, onRefreshData }) {
                       <span className="text-[10px] text-[#A09383]">Auto-compressed to web quality</span>
                     </div>
 
-                    <input
-                      type="url"
-                      value={productForm.image}
-                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                      className="w-full p-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-lg text-xs text-[#4A4036] truncate focus:outline-none focus:border-[#18181B]"
-                      placeholder="Or paste web image URL (https://...)"
-                    />
+                    {productForm.image && productForm.image.startsWith("data:") ? (
+                      <div className="flex items-center justify-between p-2 bg-[#EFE9DF] border border-[#DDD2C2] rounded-lg text-xs text-[#18181B]">
+                        <span className="font-medium flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Device photo attached &amp; compressed</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setProductForm({ ...productForm, image: "" })}
+                          className="text-[11px] text-red-700 hover:underline cursor-pointer ml-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={productForm.image}
+                        onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
+                        className="w-full p-2 bg-[#FAF8F5] border border-[#DFD5C6] rounded-lg text-xs text-[#4A4036] truncate focus:outline-none focus:border-[#18181B]"
+                        placeholder="Or paste web image URL (https://...)"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
