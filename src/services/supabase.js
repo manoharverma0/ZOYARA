@@ -407,3 +407,93 @@ export async function verifySupabaseEmailOtp(email, token) {
     return { success: false, error: err.message || "Verification failed." };
   }
 }
+
+/**
+ * ==========================================
+ * LIVE STORE SETTINGS & HOME PAGE IMAGES
+ * ==========================================
+ */
+
+// Fetch live store settings (hero banner, spotlight, category tiles) from Supabase
+export async function fetchLiveStoreSettings() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from("store_settings")
+      .select("value")
+      .eq("key", "store_config")
+      .maybeSingle();
+
+    if (error) {
+      console.warn("[ZOYARA Supabase] Error fetching store settings:", error.message);
+      return null;
+    }
+
+    return data ? data.value : null;
+  } catch (err) {
+    console.error("[ZOYARA Supabase] Fetch store settings error:", err);
+    return null;
+  }
+}
+
+// Save live store settings to Supabase
+export async function syncStoreSettingsToSupabase(settings) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+
+  try {
+    const payload = {
+      key: "store_config",
+      value: settings,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from("store_settings")
+      .upsert(payload, { onConflict: "key" });
+
+    if (error) {
+      console.error("[ZOYARA Supabase] Error saving store settings:", error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[ZOYARA Supabase] Save store settings failed:", err);
+    return false;
+  }
+}
+
+// Realtime listener for store settings & home page image updates
+export function subscribeToLiveStoreSettings(onUpdate) {
+  const supabase = getSupabaseClient();
+  if (!supabase) return () => {};
+
+  try {
+    const channel = supabase
+      .channel("realtime-settings-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "store_settings" },
+        async () => {
+          const fresh = await fetchLiveStoreSettings();
+          if (fresh && typeof onUpdate === "function") {
+            onUpdate(fresh);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        // ignore
+      }
+    };
+  } catch (err) {
+    console.warn("[ZOYARA Supabase] Realtime settings subscription warning:", err);
+    return () => {};
+  }
+}

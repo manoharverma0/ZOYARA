@@ -7,7 +7,10 @@ import {
   pushAllProductsToSupabase,
   testSupabaseConnection,
   getSupabaseCredentials,
-  subscribeToLiveProducts
+  subscribeToLiveProducts,
+  syncStoreSettingsToSupabase,
+  fetchLiveStoreSettings,
+  subscribeToLiveStoreSettings
 } from "./supabase";
 
 export { 
@@ -18,7 +21,10 @@ export {
   pushAllProductsToSupabase,
   testSupabaseConnection,
   getSupabaseCredentials,
-  subscribeToLiveProducts
+  subscribeToLiveProducts,
+  syncStoreSettingsToSupabase,
+  fetchLiveStoreSettings,
+  subscribeToLiveStoreSettings
 };
 
 const STORAGE_KEYS = {
@@ -450,7 +456,45 @@ export function getStoreSettings() {
 }
 
 export function saveStoreSettings(settings) {
-  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  try {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  } catch (e) {
+    console.error("Error saving settings to local storage:", e);
+  }
+  // Sync live to Supabase cloud immediately so mobile gets all home page images and changes
+  syncStoreSettingsToSupabase(settings)
+    .then(ok => {
+      if (!ok) console.warn("[Supabase Sync Warning]: Settings saved locally, but database sync returned false.");
+    })
+    .catch(e => console.warn("[Supabase Sync Error]:", e));
+}
+
+// Sync store settings & home page images from Supabase cloud database
+export async function syncSettingsWithSupabase() {
+  try {
+    const liveSettings = await fetchLiveStoreSettings();
+    if (liveSettings && typeof liveSettings === "object") {
+      const merged = { ...STORE_SETTINGS, ...liveSettings };
+      try {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(merged));
+      } catch {
+        // ignore
+      }
+      return merged;
+    }
+
+    // If Supabase has no store settings yet, seed current settings to cloud
+    const { isConfigured } = getSupabaseCredentials();
+    if (isConfigured) {
+      const current = getStoreSettings();
+      console.log("[ZOYARA Database] Seeding initial store settings into cloud database...");
+      syncStoreSettingsToSupabase(current).catch(console.warn);
+      return current;
+    }
+  } catch (err) {
+    console.warn("[ZOYARA] Could not sync store settings with Supabase:", err);
+  }
+  return null;
 }
 
 // --- VYAPAR BUSINESS METRICS & DASHBOARD STATS ---

@@ -19,7 +19,9 @@ import {
   getWishlist, 
   toggleWishlistItem,
   syncWithSupabase,
-  subscribeToLiveProducts
+  subscribeToLiveProducts,
+  syncSettingsWithSupabase,
+  subscribeToLiveStoreSettings
 } from "./services/storage";
 import { applyDynamicSeo } from "./utils/seo";
 import { 
@@ -119,9 +121,19 @@ export default function App() {
     setProducts(loadedProducts);
     setSettings(loadedSettings);
     applyDynamicSeo(loadedSettings);
+
+    // Sync products from cloud
     syncWithSupabase().then(liveProds => {
       if (liveProds && liveProds.length > 0) {
         setProducts(liveProds);
+      }
+    });
+
+    // Sync store settings (hero banner, spotlight, category tiles) from cloud
+    syncSettingsWithSupabase().then(liveSettings => {
+      if (liveSettings) {
+        setSettings(liveSettings);
+        applyDynamicSeo(liveSettings);
       }
     });
   };
@@ -134,14 +146,29 @@ export default function App() {
           setProducts(liveProds);
         }
       });
+
+      syncSettingsWithSupabase().then(liveSettings => {
+        if (liveSettings) {
+          setSettings(liveSettings);
+          applyDynamicSeo(liveSettings);
+        }
+      });
     };
 
     handleSync();
 
-    // Subscribe to live Supabase database broadcasts (Postgres changes)
-    const unsubscribe = subscribeToLiveProducts((freshProds) => {
+    // 1. Subscribe to live Supabase products database broadcasts (Postgres changes)
+    const unsubscribeProds = subscribeToLiveProducts((freshProds) => {
       if (freshProds && freshProds.length > 0) {
         setProducts(freshProds);
+      }
+    });
+
+    // 2. Subscribe to live Supabase store_settings broadcasts (home page images, banners, tiles)
+    const unsubscribeSettings = subscribeToLiveStoreSettings((freshSettings) => {
+      if (freshSettings) {
+        setSettings(freshSettings);
+        applyDynamicSeo(freshSettings);
       }
     });
 
@@ -155,7 +182,8 @@ export default function App() {
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      unsubscribe();
+      unsubscribeProds();
+      unsubscribeSettings();
       window.removeEventListener("focus", handleSync);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
